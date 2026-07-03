@@ -292,8 +292,10 @@ registerVeniceLlm(app, {
 
 // Vapi sends tool calls here
 app.post("/vapi/tool-call", async (request, reply) => {
-  // Authenticate — verify the request came from Vapi
-  const authHeader = request.headers["x-vapi-secret"] || request.headers.authorization;
+  // Authenticate — verify the request came from Vapi. A duplicated header can
+  // arrive as string[], so collapse to the first value before comparing.
+  const rawHeader = request.headers["x-vapi-secret"] || request.headers.authorization;
+  const authHeader = Array.isArray(rawHeader) ? rawHeader[0] : rawHeader;
   const token = typeof authHeader === "string" && authHeader.startsWith("Bearer ")
     ? authHeader.slice(7)
     : authHeader;

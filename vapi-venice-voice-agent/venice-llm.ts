@@ -150,8 +150,11 @@ function streamCompletion(reply: FastifyReply, completion: OpenAiCompletion): vo
  */
 function failureMessage(err: Error): string {
   const m = err.message || "";
-  if (/\b402\b/.test(m) && /(budget|spend|credit|exhaust)/i.test(m)) {
-    return "I've reached my lookup budget for this call, so I can't search for more right now.";
+  // A 402 from Floe — the metered Venice endpoint OR the x402 tool proxy — always
+  // means a spend/credit ceiling was hit. It's one shared cap (model + tools), so
+  // don't imply a search-only limit, and don't depend on the body's wording.
+  if (/\b402\b/.test(m)) {
+    return "I've reached my budget limit for this call, so I can't continue right now.";
   }
   return "Sorry — I had a brief technical hiccup. Could you ask that again?";
 }
