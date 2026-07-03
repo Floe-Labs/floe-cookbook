@@ -10,7 +10,7 @@ A phone-based voice concierge whose **LLM inference *and* paid tool calls both m
 
 ## How it works
 
-```
+```text
    Phone call
       │
       ▼
@@ -23,7 +23,7 @@ A phone-based voice concierge whose **LLM inference *and* paid tool calls both m
                                              (same credit line)
 ```
 
-- Vapi's `custom-llm` provider points at `<SERVER_URL>/llm`. The shim (`venice-llm.ts`) forwards each turn to Floe's OpenAI-compatible `/v1/venice/chat/completions` with `stream:false` (Floe meters per-call), then re-emits the completion to Vapi as a single-chunk SSE stream.
+- Vapi's `custom-llm` provider points at `<SERVER_URL>/llm/<VAPI_SERVER_SECRET>` (the secret in the path authenticates this credit-line-spending endpoint — the server listens on `0.0.0.0`). The shim (`venice-llm.ts`) forwards each turn to Floe's OpenAI-compatible `/v1/venice/chat/completions` with `stream:false` (Floe meters per-call), then re-emits the completion to Vapi as a single-chunk SSE stream.
 - `search_web` webhooks to `/vapi/tool-call`, which calls Exa through Floe's x402 proxy and appends a `[Floe budget: …]` line so the model can pace itself.
 - The **real** enforcer is Floe's server-side session spend-limit (set in `setup.ts`). When it's exhausted, both planes get a `402` and the agent says it's out of budget.
 

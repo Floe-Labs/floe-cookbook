@@ -29,6 +29,14 @@ const VAPI_PUBLIC_KEY = process.env.VAPI_PUBLIC_KEY || "";
 const VAPI_ASSISTANT_ID = process.env.VAPI_ASSISTANT_ID || "";
 // Session spend cap, mirrored from setup.ts so the budget line the model reads matches the real cap.
 const FLOE_SPEND_LIMIT_RAW = process.env.FLOE_SPEND_LIMIT_RAW || "50000";
+// Mirror setup.ts's guard: server.ts can run without setup.ts, and an invalid
+// cap makes SPEND_CAP_USD NaN — breaking the budget lines + startup logs.
+if (!/^\d+$/.test(FLOE_SPEND_LIMIT_RAW) || Number(FLOE_SPEND_LIMIT_RAW) <= 0) {
+  console.error(
+    `FLOE_SPEND_LIMIT_RAW must be a positive integer in USDC base units (e.g. 50000 = $0.05). Got: "${FLOE_SPEND_LIMIT_RAW}"`
+  );
+  process.exit(1);
+}
 const SPEND_CAP_USD = Number(FLOE_SPEND_LIMIT_RAW) / 1e6;
 const PORT = parseInt(process.env.PORT || "3000", 10);
 const FETCH_TIMEOUT_MS = 15_000;
@@ -40,8 +48,12 @@ const DEBUG = process.env.DEBUG === "1";
 // In-process cumulative spend, keyed by Vapi call id, so concurrent callers (phone
 // + web widget) don't pollute each other's budget line. This is NOT the enforcer —
 // Floe's per-agent session spend-limit is the real, server-side hard cap. This map
-// only feeds the advisory line the model reads to taper. Entries are demo-scoped
-// (cleared on server restart); fine for a single-session demo.
+// only feeds the advisory line the model reads to taper, and ONLY as a fallback:
+// budgetLine() prefers Floe's X-Floe-Budget-Advisory header when present, which
+// reflects ALL planes (model + tools). This local counter tracks TOOL spend only —
+// Venice inference (~$0.0002/turn) isn't threaded in here, so when the advisory is
+// absent the fallback slightly understates total spend. Demo-scoped (cleared on
+// restart); fine for a single-session demo.
 const spendByCall = new Map<string, number>();
 
 if (!FLOE_API_KEY) {
@@ -288,6 +300,8 @@ registerVeniceLlm(app, {
   floeVeniceUrl: FLOE_VENICE_URL,
   veniceModel: VENICE_MODEL,
   timeoutMs: LLM_TIMEOUT_MS,
+  // Same secret as the tool webhook — Vapi carries it in the custom-llm URL path.
+  authToken: VAPI_SERVER_SECRET,
 });
 
 // Vapi sends tool calls here
@@ -357,8 +371,13 @@ app.post("/vapi/tool-call", async (request, reply) => {
       continue;
     }
 
-    // Validate required arguments
-    const missing = endpoint.requiredArgs.filter((arg) => !args[arg]);
+    // Validate required arguments — must be non-empty STRINGS. JSON.parse can
+    // yield { query: 123 } or { query: {} }, which are truthy but wrong-schema;
+    // treat anything non-string/empty as missing rather than proxy it to Exa.
+    const missing = endpoint.requiredArgs.filter((arg) => {
+      const v = (args as Record<string, unknown>)[arg];
+      return typeof v !== "string" || v.trim() === "";
+    });
     if (missing.length > 0) {
       results.push({
         name,

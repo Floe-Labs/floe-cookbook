@@ -21,6 +21,7 @@ const VAPI_API_KEY = process.env.VAPI_API_KEY;
 const VAPI_ASSISTANT_ID = process.env.VAPI_ASSISTANT_ID;
 let VAPI_PHONE_NUMBER_ID = process.env.VAPI_PHONE_NUMBER_ID || "";
 const TARGET_PHONE_NUMBER = process.env.TARGET_PHONE_NUMBER;
+const FLOE_CREDIT_API = process.env.FLOE_CREDIT_API_URL || "https://credit-api.floelabs.xyz";
 
 if (!VAPI_API_KEY) {
   console.error("Set VAPI_API_KEY in .env");
@@ -72,7 +73,7 @@ async function main() {
   console.log(`\n🎧 Fetch the recording/transcript afterward:`);
   console.log(`   curl -H "Authorization: Bearer $VAPI_API_KEY" https://api.vapi.ai/call/${callId ?? "<call-id>"}`);
   console.log(`\n💰 Then check Floe spending:`);
-  console.log(`   curl -H "Authorization: Bearer $FLOE_API_KEY" https://credit-api.floelabs.xyz/v1/agents/transactions?limit=10`);
+  console.log(`   curl -H "Authorization: Bearer $FLOE_API_KEY" ${FLOE_CREDIT_API}/v1/agents/transactions?limit=10`);
 }
 
 main().catch((err) => {

@@ -27,6 +27,21 @@ export interface VeniceLlmConfig {
   /** Venice model id (with or without the venice/ prefix; Floe strips it). */
   veniceModel: string;
   timeoutMs: number;
+  /**
+   * Shared secret Vapi carries in the custom-llm URL path
+   * (`${SERVER_URL}/llm/${authToken}` → Vapi appends `/chat/completions`). This
+   * gates the endpoint, which spends the server's Floe credit line and listens
+   * on 0.0.0.0. A path segment is used because Vapi's custom-llm doesn't reliably
+   * send custom headers.
+   */
+  authToken: string;
+}
+
+/** Error carrying the upstream HTTP status so failures classify by code, not text. */
+class FloeVeniceError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
 }
 
 // Fields we forward to Floe→Venice. Anything else Vapi sends (its own metadata,
@@ -103,8 +118,9 @@ async function callFloeVenice(
     const costUsdc = res.headers.get("x-floe-cost-usdc");
     const text = await res.text();
     if (!res.ok) {
-      // 402 budget_exhausted lands here → surfaced as the graceful hard-stop below.
-      throw new Error(`Floe Venice ${res.status}: ${text.slice(0, 300)}`);
+      // 402 (budget/funding gate) lands here → surfaced as the graceful hard-stop
+      // below, classified by STATUS not body text.
+      throw new FloeVeniceError(`Floe Venice ${res.status}: ${text.slice(0, 300)}`, res.status);
     }
     return { completion: JSON.parse(text) as OpenAiCompletion, costUsdc };
   } finally {
@@ -149,11 +165,12 @@ function streamCompletion(reply: FastifyReply, completion: OpenAiCompletion): vo
  * agent falsely tells the caller it's out of money (which it isn't).
  */
 function failureMessage(err: Error): string {
-  const m = err.message || "";
-  // A 402 from Floe — the metered Venice endpoint OR the x402 tool proxy — always
-  // means a spend/credit ceiling was hit. It's one shared cap (model + tools), so
-  // don't imply a search-only limit, and don't depend on the body's wording.
-  if (/\b402\b/.test(m)) {
+  // Classify by STATUS, not body wording. 402 = spend/funding ceiling; 403 =
+  // access gate (e.g. allowlist). Either is a limit, not a transient glitch, so
+  // don't tell the caller it's a "technical hiccup" — and it's one shared cap
+  // (model + tools), so don't imply a search-only limit.
+  const status = err instanceof FloeVeniceError ? err.status : undefined;
+  if (status === 402 || status === 403) {
     return "I've reached my budget limit for this call, so I can't continue right now.";
   }
   return "Sorry — I had a brief technical hiccup. Could you ask that again?";
@@ -170,7 +187,12 @@ function fallbackCompletion(message: string): OpenAiCompletion {
 }
 
 export function registerVeniceLlm(app: FastifyInstance, cfg: VeniceLlmConfig): void {
-  app.post("/llm/chat/completions", async (request, reply) => {
+  // Secret in the URL path (Vapi is configured with `${SERVER_URL}/llm/${authToken}`)
+  // gates this credit-line-spending endpoint on a 0.0.0.0 server.
+  app.post<{ Params: { token: string } }>("/llm/:token/chat/completions", async (request, reply) => {
+    if (request.params.token !== cfg.authToken) {
+      return reply.status(401).send({ error: "Unauthorized" });
+    }
     const incoming = (request.body ?? {}) as Record<string, unknown>;
     const wantsStream = incoming.stream === true;
 

@@ -57,7 +57,10 @@ if (!/^\d+$/.test(FLOE_SPEND_LIMIT_RAW) || Number(FLOE_SPEND_LIMIT_RAW) <= 0) {
 }
 
 const vapi = new VapiClient({ token: VAPI_API_KEY });
-const toolCallUrl = `${SERVER_URL}/vapi/tool-call`;
+// Strip a trailing slash (common with copy-pasted ngrok URLs) so we never build
+// `//vapi/tool-call` or `//llm`, which wouldn't match the server's routes.
+const BASE_URL = (SERVER_URL ?? "").replace(/\/+$/, "");
+const toolCallUrl = `${BASE_URL}/vapi/tool-call`;
 const spendCapUsd = Number(FLOE_SPEND_LIMIT_RAW) / 1e6;
 
 const SYSTEM_PROMPT = `You are a friendly voice concierge on a phone call. When the caller asks something you don't already know — weather, business hours, recommendations, current events, facts — use search_web to look it up and answer conversationally. You have a limited lookup budget; each search costs money. As you approach your budget, be concise and search less. If a search is blocked because you've reached your budget, tell the caller plainly that you've hit your lookup budget for this call and can't search more. Do not retry.
@@ -143,8 +146,9 @@ async function main() {
         }
       : {
           provider: "custom-llm" as const,
-          // Vapi appends /chat/completions → our shim route in server.ts.
-          url: `${SERVER_URL}/llm`,
+          // Vapi appends /chat/completions → our shim route. The secret in the
+          // path authenticates this credit-line-spending endpoint (server.ts).
+          url: `${BASE_URL}/llm/${VAPI_SERVER_SECRET}`,
           model: VENICE_MODEL,
           messages: [{ role: "system" as const, content: SYSTEM_PROMPT }],
           toolIds: [searchWebTool.id],
@@ -180,7 +184,7 @@ async function main() {
     `   curl -H "Authorization: Bearer $FLOE_API_KEY" \\`
   );
   console.log(
-    `     https://credit-api.floelabs.xyz/v1/agents/transactions?limit=10`
+    `     ${FLOE_CREDIT_API}/v1/agents/transactions?limit=10`
   );
 }
 
