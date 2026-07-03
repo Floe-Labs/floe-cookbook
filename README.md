@@ -20,6 +20,7 @@ frameworks.
 | If you're… | Start with | Runs today |
 |---|---|---|
 | Building a **voice agent** (Vapi) | [`vapi-voice-agent/`](./vapi-voice-agent) | ✅ |
+| Governing a voice agent's **model + tools** on one credit line (Venice) | [`vapi-venice-voice-agent/`](./vapi-venice-voice-agent) | ✅ |
 | Calling **x402 APIs** from your own framework | [`x402-client/`](./x402-client) | ✅ |
 | On **Coinbase AgentKit** (TypeScript) | [`agentkit-ts-chatbot/`](./agentkit-ts-chatbot) | ✅ |
 | On **LangChain** (Python) | [`langchain-agent/`](./langchain-agent) | ✅ |
@@ -34,6 +35,7 @@ frameworks.
 | Example | Language | Frameworks | What it shows |
 |---|---|---|---|
 | [`vapi-voice-agent`](./vapi-voice-agent) | TypeScript | Vapi · GPT-4o · ElevenLabs | A voice agent that pays per-call for its tools via x402 — the per-minute-economics use case |
+| [`vapi-venice-voice-agent`](./vapi-venice-voice-agent) | TypeScript | Vapi · Venice · ElevenLabs | Same, but the **LLM runs on Venice through Floe** too — model + tools metered on one credit line, with an audible budget hard-stop |
 | [`x402-client`](./x402-client) | TypeScript | AgentKit | Pay any x402 API through the Floe proxy — the minimal payment example |
 | [`agentkit-ts-chatbot`](./agentkit-ts-chatbot) | TypeScript | AgentKit · Vercel AI SDK | Conversational agent with wallet + x402 spend |
 | [`langchain-agent`](./langchain-agent) | Python | LangChain | Wallet + x402 spend in a LangChain agent |

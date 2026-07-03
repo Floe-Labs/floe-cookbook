@@ -1,0 +1,22 @@
+{
+  "name": "vapi-venice-voice-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vapi voice agent whose LLM (Venice) and tools both meter on one Floe credit line",
+  "type": "module",
+  "scripts": {
+    "setup": "tsx setup.ts",
+    "start": "tsx server.ts",
+    "call": "tsx call.ts"
+  },
+  "dependencies": {
+    "@vapi-ai/server-sdk": "^1.2.0",
+    "dotenv": "^16.3.1",
+    "fastify": "^4.28.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.41",
+    "tsx": "^4.20.0",
+    "typescript": "^5.3.0"
+  }
+}

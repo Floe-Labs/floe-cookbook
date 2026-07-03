@@ -1,0 +1,194 @@
+/**
+ * Vapi Assistant Setup
+ *
+ * Creates custom tools and a Vapi voice assistant that calls paid x402 APIs
+ * through Floe's proxy. Run once, then start the server.
+ *
+ * Usage:
+ *   cp .env.example .env   # fill in keys
+ *   npm install
+ *   npx tsx setup.ts
+ */
+import { VapiClient } from "@vapi-ai/server-sdk";
+import "dotenv/config";
+
+const VAPI_API_KEY = process.env.VAPI_API_KEY;
+const SERVER_URL = process.env.SERVER_URL;
+const FLOE_API_KEY = process.env.FLOE_API_KEY;
+// Wired into each tool's server config so Vapi authenticates its webhook calls
+// (sent as the x-vapi-secret header). Without this the server 401s every tool call.
+const VAPI_SERVER_SECRET = process.env.VAPI_SERVER_SECRET;
+// "venice" (default) runs the MODEL through Floe → Venice, so inference is
+// metered on the same credit line as the tools (unified ceiling). "openai"
+// keeps gpt-4o called directly by Vapi (off Floe) — the untracked contrast.
+const LLM_PROVIDER = (process.env.LLM_PROVIDER || "venice").toLowerCase();
+const VENICE_MODEL = process.env.VENICE_MODEL || "mistral-small-3-2-24b-instruct";
+// USDC base units (6 decimals): 50000 = $0.05 ≈ 7 Exa searches. Venice model
+// inference is ALSO metered against this one cap, but at ~$0.0002/turn it's
+// sub-cent, so the original tools-tuned budget still tapers across several
+// turns before the hard-stop. Both planes, one ceiling.
+const FLOE_SPEND_LIMIT_RAW = process.env.FLOE_SPEND_LIMIT_RAW || "50000";
+const FLOE_CREDIT_API = process.env.FLOE_CREDIT_API_URL || "https://credit-api.floelabs.xyz";
+
+if (!VAPI_API_KEY) {
+  console.error("Set VAPI_API_KEY in .env");
+  process.exit(1);
+}
+if (!SERVER_URL) {
+  console.error("Set SERVER_URL in .env (your public webhook URL, e.g. ngrok)");
+  process.exit(1);
+}
+if (!FLOE_API_KEY) {
+  console.error("Set FLOE_API_KEY in .env (needed to set the session spend-limit)");
+  process.exit(1);
+}
+if (!VAPI_SERVER_SECRET) {
+  console.error("Set VAPI_SERVER_SECRET in .env (the same value server.ts checks; wired into the tool so Vapi authenticates its webhook calls)");
+  process.exit(1);
+}
+
+// The cap must be a positive integer (USDC base units) or we'd silently misconfigure
+// the demo — fail fast with a clear message.
+if (!/^\d+$/.test(FLOE_SPEND_LIMIT_RAW) || Number(FLOE_SPEND_LIMIT_RAW) <= 0) {
+  console.error(
+    `FLOE_SPEND_LIMIT_RAW must be a positive integer in USDC base units (e.g. 50000 = $0.05). Got: "${FLOE_SPEND_LIMIT_RAW}"`
+  );
+  process.exit(1);
+}
+
+const vapi = new VapiClient({ token: VAPI_API_KEY });
+// Strip a trailing slash (common with copy-pasted ngrok URLs) so we never build
+// `//vapi/tool-call` or `//llm`, which wouldn't match the server's routes.
+const BASE_URL = (SERVER_URL ?? "").replace(/\/+$/, "");
+const toolCallUrl = `${BASE_URL}/vapi/tool-call`;
+const spendCapUsd = Number(FLOE_SPEND_LIMIT_RAW) / 1e6;
+
+const SYSTEM_PROMPT = `You are a friendly voice concierge on a phone call. When the caller asks something you don't already know — weather, business hours, recommendations, current events, facts — use search_web to look it up and answer conversationally. You have a limited lookup budget; each search costs money. As you approach your budget, be concise and search less. If a search is blocked because you've reached your budget, tell the caller plainly that you've hit your lookup budget for this call and can't search more. Do not retry.
+
+Keep your responses concise and conversational — you're on a phone call, not writing an essay.
+When you use a tool, briefly tell the caller what you're doing ("Let me look that up...").
+Summarize search results in 2-3 sentences max.
+
+BUDGET — read this carefully:
+- You have a strict, limited spending budget for this call. Each paid lookup (every tool call) costs real money.
+- EVERY tool result ends with a "[Floe budget: ...]" line showing dollars used of your cap, dollars left, roughly how many lookups remain, and a "pace:" tier. Read it EVERY time and let it steer you.
+- Pace yourself OUT LOUD as you climb so the caller can HEAR you managing the budget — don't just silently hit a wall at the end:
+  - pace "on track": search normally; no need to mention the budget.
+  - pace "ease up": prefer a single focused search and keep answers short. Briefly say something like "I'll keep this quick to stay on budget."
+  - pace "nearly out": only search if it's essential, and start wrapping up. Say something like "I've got budget for about one more lookup, so let's make it count."
+  - pace "last call": treat your next lookup as possibly your last — say so before you use it.
+- If a tool result says the payment was blocked because you reached your spending limit, STOP making paid lookups. Clearly tell the caller, in plain language, that you've hit your spending limit for this call and cannot make any more paid lookups. Do not retry the tool.`;
+
+async function main() {
+  console.log("🎙️  Setting up Vapi assistant...\n");
+
+  // Step 0: Set the Floe session spend-limit FIRST and FAIL CLOSED. This is the
+  // hard cap the whole demo is about — if we can't set it, abort before creating
+  // any Vapi resources so we never run an uncapped "spend-governed" agent.
+  console.log(`💵 Setting Floe session spend-limit...`);
+  try {
+    const res = await fetch(`${FLOE_CREDIT_API}/v1/agents/spend-limit`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${FLOE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ limitRaw: FLOE_SPEND_LIMIT_RAW }),
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      console.error(`   ❌ Could not set spend-limit (${res.status}): ${body.slice(0, 200)}`);
+      console.error(`      Aborting — refusing to create an uncapped agent. Check FLOE_API_KEY and that the agent is funded, then re-run.`);
+      process.exit(1);
+    }
+    console.log(
+      `   ✅ Spend-limit set: ${FLOE_SPEND_LIMIT_RAW} base units = $${spendCapUsd.toFixed(3)} for this session\n`
+    );
+  } catch (err) {
+    console.error(`   ❌ Spend-limit request failed: ${(err as Error).message}`);
+    console.error(`      Aborting — refusing to create an uncapped agent. Is credit-api reachable? Then re-run.`);
+    process.exit(1);
+  }
+
+  // Step 1: Create the web-search tool
+  console.log("📦 Creating tools...");
+
+  const searchWebTool = await vapi.tools.create({
+    type: "function",
+    function: {
+      name: "search_web",
+      description: "Search the live web for an answer (Exa, paid via Floe). Use for anything you don't already know — weather, business hours, recommendations, current events, facts. Pass the caller's question as the query.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "What to search the web for (the caller's question)." },
+        },
+        required: ["query"],
+      },
+    },
+    server: { url: toolCallUrl, headers: { "x-vapi-secret": VAPI_SERVER_SECRET } },
+  });
+  console.log(`   ✅ search_web (${searchWebTool.id})`);
+
+  // Step 2: Create assistant with the tool attached
+  console.log("\n🤖 Creating assistant...");
+
+  // Venice (default): custom-llm → our /llm shim → Floe → Venice, so model
+  // tokens are billed to the same credit line + session cap as the tool. gpt-4o:
+  // Vapi calls OpenAI directly (off Floe) — kept as the untracked-spend contrast.
+  const model =
+    LLM_PROVIDER === "openai"
+      ? {
+          provider: "openai" as const,
+          model: "gpt-4o",
+          messages: [{ role: "system" as const, content: SYSTEM_PROMPT }],
+          toolIds: [searchWebTool.id],
+        }
+      : {
+          provider: "custom-llm" as const,
+          // Vapi appends /chat/completions → our shim route. The secret in the
+          // path authenticates this credit-line-spending endpoint (server.ts).
+          url: `${BASE_URL}/llm/${VAPI_SERVER_SECRET}`,
+          model: VENICE_MODEL,
+          messages: [{ role: "system" as const, content: SYSTEM_PROMPT }],
+          toolIds: [searchWebTool.id],
+        };
+  console.log(
+    `   LLM: ${LLM_PROVIDER === "openai" ? "gpt-4o (direct, off Floe)" : `Venice ${VENICE_MODEL} via Floe`}`,
+  );
+
+  const assistant = await vapi.assistants.create({
+    name: "Floe Web Concierge",
+    // Vapi types model.model as a provider enum; the Venice id is a free string.
+    model: model as Parameters<typeof vapi.assistants.create>[0]["model"],
+    voice: {
+      provider: "11labs",
+      voiceId: "cgSgspJ2msm6clMCkdW9", // ElevenLabs "Jessica" — swap for any voiceId from the ElevenLabs library
+    },
+    firstMessage:
+      "Hi! I'm your concierge — ask me anything and I'll look it up for you. What can I help with?",
+  });
+
+  console.log(`   ✅ Assistant created: ${assistant.name} (${assistant.id})`);
+
+  console.log(`\n📝 Add this to your .env so the outbound call and budget logic can use it:`);
+  console.log(`   VAPI_ASSISTANT_ID=${assistant.id}`);
+
+  console.log(`\n📞 Next steps:`);
+  console.log(`   1. Start the server:  npx tsx server.ts   (keep ngrok pointed at it)`);
+  console.log(`   2. Set VAPI_PHONE_NUMBER_ID and TARGET_PHONE_NUMBER (+1...) in .env`);
+  console.log(`   3. Place the outbound call: npx tsx call.ts   (the agent calls TARGET_PHONE_NUMBER)`);
+  console.log(`   (Optional) web widget: open http://localhost:${process.env.PORT || "3000"}/ — needs VAPI_PUBLIC_KEY.`);
+  console.log(`\n💰 After the call, check your Floe spending:`);
+  console.log(
+    `   curl -H "Authorization: Bearer $FLOE_API_KEY" \\`
+  );
+  console.log(
+    `     ${FLOE_CREDIT_API}/v1/agents/transactions?limit=10`
+  );
+}
+
+main().catch((err) => {
+  console.error("❌ Setup failed:", err.message || err);
+  process.exit(1);
+});
