@@ -36,6 +36,7 @@ frameworks.
 |---|---|---|---|
 | [`vapi-voice-agent`](./vapi-voice-agent) | TypeScript | Vapi · GPT-4o · ElevenLabs | A voice agent that pays per-call for its tools via x402 — the per-minute-economics use case |
 | [`vapi-venice-voice-agent`](./vapi-venice-voice-agent) | TypeScript | Vapi · Venice · ElevenLabs | Same, but the **LLM runs on Venice through Floe** too — model + tools metered on one credit line, with an audible budget hard-stop |
+| [`vapi-memory-agent`](./vapi-memory-agent) | TypeScript | Vapi · Venice · HydraDB | A voice agent with **persistent memory** (HydraDB) — remembers callers across calls; model + memory on **one Floe key**, no vendor keys |
 | [`x402-client`](./x402-client) | TypeScript | AgentKit | Pay any x402 API through the Floe proxy — the minimal payment example |
 | [`agentkit-ts-chatbot`](./agentkit-ts-chatbot) | TypeScript | AgentKit · Vercel AI SDK | Conversational agent with wallet + x402 spend |
 | [`langchain-agent`](./langchain-agent) | Python | LangChain | Wallet + x402 spend in a LangChain agent |
