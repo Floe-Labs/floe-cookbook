@@ -2,28 +2,47 @@
 
 **Route any agent's LLM through Floe's metered proxy.** One OpenAI-compatible
 endpoint fronts **any** OpenAI or Anthropic model — billed per token to your Floe
-credit line and **capped server-side**. No model lock, no provider account juggling,
+key and **capped server-side**. No model lock, no provider account juggling, and
 your provider key never leaves your request.
 
 This is the framework-agnostic version: just the standard `openai` SDK pointed at
 Floe. (For the budget-aware "$1-not-$414 loop kill", see [`../crewai-demo`](../crewai-demo).)
 
+## What it demonstrates
+
+- Fronting any priced OpenAI/Anthropic model through a single billed endpoint.
+- Per-token metering to one Floe key, with cost returned on a response header.
+- A server-side session cap: calls past your budget are refused, not billed.
+
+## Stack
+
+| | |
+|---|---|
+| Language | TypeScript · Python |
+| Framework | Standard `openai` SDK (framework-agnostic) |
+| Floe surface | Metered LLM proxy |
+
 ## How it works
 
 | | |
 |---|---|
-| Base URL | `https://credit-api.floelabs.xyz/v1/llm` — set this as the SDK `baseURL`/`base_url`; the client appends `/chat/completions` (and `/embeddings`) |
+| Base URL | `https://credit-api.floelabs.xyz/v1/llm` — set as the SDK `baseURL`/`base_url`; the client appends `/chat/completions` (and `/embeddings`) |
 | `Authorization: Bearer` | your Floe agent key `floe_<hex>` — auth + billing identity |
 | `X-Floe-Provider-Key` | your OpenAI/Anthropic key — passed through to the provider, **never stored** |
 | `model` (in body) | **any** priced model: `gpt-5.5`, `claude-opus-4-8`, `claude-sonnet-4-6`, `gpt-5.4-mini`, … |
-| Cost | metered to your credit line; returned on the `X-Floe-Cost-USDC` response header |
+| Cost | metered to your Floe key; returned on the `X-Floe-Cost-USDC` response header |
 | Cap | set a session spend limit — calls past your budget are **refused server-side**, not billed |
+
+## Prerequisites
+
+- Node.js 18+ or Python 3.10+
+- A Floe agent key (`floe_<hex>`) — [get one at the dashboard](https://dev-dashboard.floelabs.xyz)
+- An OpenAI or Anthropic provider key (`PROVIDER_API_KEY`)
 
 ## Run
 
 ```bash
-cp .env.example .env
-# fill in FLOE_API_KEY (floe_<hex>) and PROVIDER_API_KEY (your OpenAI/Anthropic key)
+cp .env.example .env      # FLOE_API_KEY (floe_<hex>) and PROVIDER_API_KEY
 
 # TypeScript
 npm install && npm start
@@ -35,4 +54,6 @@ pip install -r requirements.txt && python main.py
 Get a Floe agent key at the [dashboard](https://dev-dashboard.floelabs.xyz) →
 Create an agent. Fund it with a card — no crypto, no wallet to manage.
 
-→ Full reference: [Compute / metered LLM docs](https://floe-labs.gitbook.io/docs/x402-directory/compute)
+## Learn more
+
+- [Floe docs — Compute / metered LLM](https://floe-labs.gitbook.io/docs/x402-directory/compute)

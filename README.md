@@ -1,129 +1,111 @@
-# Floe Examples
+<p align="center">
+  <h1 align="center">🍳 Floe Cookbook</h1>
+  <p align="center">Reference AI agents built on Floe — the spend layer for agents. One Floe key pays every vendor, with programmable spend controls.</p>
+</p>
 
-**Runnable reference agents for the Floe spend layer.** Clone, configure, run in
-under 5 minutes. TypeScript and Python. Walletless. No crypto required.
+<p align="center">
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
+  <!-- CI badge is a placeholder: it points at .github/workflows/ci.yml, which does not exist yet. Create that workflow (devops) to make this badge live. -->
+  <a href="./.github/workflows/ci.yml"><img src="https://github.com/Floe-Labs/floe-cookbook/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://floe-labs.gitbook.io/docs"><img src="https://img.shields.io/badge/docs-gitbook-brightgreen.svg" alt="Docs"></a>
+  <a href="https://x.com/FloeLabs"><img src="https://img.shields.io/badge/follow-%40FloeLabs-black.svg" alt="X / Twitter"></a>
+  <a href="https://github.com/Floe-Labs"><img src="https://img.shields.io/badge/github-Floe--Labs-181717.svg" alt="GitHub"></a>
+</p>
 
-[Website](https://floelabs.xyz) · [Dashboard](https://dev-dashboard.floelabs.xyz) · [Docs](https://floe-labs.gitbook.io/docs) · [Quickstart](https://floe-labs.gitbook.io/docs/developers/agent-quickstart)
+<p align="center">
+  <a href="https://floelabs.xyz">Website</a> ·
+  <a href="https://dev-dashboard.floelabs.xyz">Dashboard</a> ·
+  <a href="https://floe-labs.gitbook.io/docs">Docs</a> ·
+  <a href="https://floe-labs.gitbook.io/docs/developers/agent-quickstart">Quickstart</a>
+</p>
 
 ---
 
-Floe is the spend layer for AI agents: your agent pays across 2,000+ vendor APIs
-through one endpoint, governed by programmable, context-aware budgets — no
-per-vendor accounts, no wallet, no crypto. These examples show it working in real
-frameworks.
+## What is this?
 
-> **Start free.** Get an agent key at [the dashboard](https://dev-dashboard.floelabs.xyz),
-> fund with a card, and your agent makes its first paid API call in minutes.
+A cookbook of small, self-contained reference agents that show **Floe** in real
+frameworks — Vapi, LangChain, CrewAI, Coinbase AgentKit, MCP, the OpenAI Agents
+SDK, and plain SDKs. Each folder is an independent example you can read, copy, and
+run on its own. This is a **gallery, not a template** — there's nothing to clone
+wholesale; pick the recipe closest to what you're building.
 
-## Where to start
+**Floe is the spend/billing layer for AI agents.** It's walletless and priced in
+USD. **One Floe key** pays every vendor your agent uses — the model, memory,
+tools, and 2,000+ x402 API services — through a single endpoint, governed by
+programmable, context-aware spend controls. That's **unified billing** for
+agents: rail-agnostic, one key, one ledger, no per-vendor accounts, no crypto.
 
-| If you're… | Start with | Runs today |
-|---|---|---|
-| Building a **voice agent** (Vapi) | [`vapi-voice-agent/`](./vapi-voice-agent) | ✅ |
-| Governing a voice agent's **model + tools** on one credit line (Venice) | [`vapi-venice-voice-agent/`](./vapi-venice-voice-agent) | ✅ |
-| Calling **x402 APIs** from your own framework | [`x402-client/`](./x402-client) | ✅ |
-| On **Coinbase AgentKit** (TypeScript) | [`agentkit-ts-chatbot/`](./agentkit-ts-chatbot) | ✅ |
-| On **LangChain** (Python) | [`langchain-agent/`](./langchain-agent) | ✅ |
-| On **CrewAI** | [`crewai-demo/`](./crewai-demo) | ✅ |
-| On **Claude Desktop / Code / Cursor** | [`mcp-demo/`](./mcp-demo) | ✅ |
-| On **OpenAI Agents SDK** | [`openai-agents/`](./openai-agents) | Preview (MCP fallback) |
+> **Start free.** Create an agent key at the
+> [dashboard](https://dev-dashboard.floelabs.xyz), fund it with a card, and your
+> agent makes its first paid API call in minutes.
+
+## What you can build
+
+- **Voice agents** that pay per-lookup for live web search and stop cleanly at a budget — [`vapi-voice-agent`](./vapi-voice-agent), [`vapi-venice-voice-agent`](./vapi-venice-voice-agent) — or that **remember callers across calls** via HydraDB — [`vapi-memory-agent`](./vapi-memory-agent)
+- **Budget-capped multi-agent crews** where a runaway loop dies at $1, not $414 — [`crewai-demo`](./crewai-demo)
+- **Metered LLM access** — any OpenAI/Anthropic model behind one billed endpoint with a server-side cap — [`metered-llm`](./metered-llm)
+- **Conversational agents** that pay x402 APIs from natural language — [`langchain-agent`](./langchain-agent)
+- **Zero-install access from Claude Desktop / Cursor** via hosted MCP — [`mcp-demo`](./mcp-demo)
+- **On-chain / self-custody agents** — treasury, yield, and flash-loan strategies — [`yield-optimizer`](./yield-optimizer), [`flash-arb-bot`](./flash-arb-bot)
 
 ## Examples
 
-### Spend & payments — live today
+| Example | Language | Framework / Stack | Difficulty | What it shows | Link |
+|---|---|---|---|---|---|
+| **metered-llm** | TypeScript · Python | OpenAI SDK (framework-agnostic) | Beginner | Route any OpenAI/Anthropic model through Floe's metered proxy — per-token billing on one key, capped server-side, your provider key never stored. | [→](./metered-llm) |
+| **x402-client** | TypeScript | Coinbase AgentKit | Beginner | The minimal payment example: delegate credit to the Floe facilitator, then call any x402 API with automatic, gas-free payment. | [→](./x402-client) |
+| **mcp-demo** | Config only | Claude Desktop / Cursor (MCP) | Beginner | Connect Claude Desktop or Cursor to Floe's hosted MCP server in one line — read markets, intents, and loans with zero install. | [→](./mcp-demo) |
+| **langchain-agent** | Python | LangChain | Beginner | A LangChain agent that exposes Floe actions as tools — check markets, borrow, monitor, and repay in natural language. | [→](./langchain-agent) |
+| **openai-agents** | Config only | OpenAI Agents SDK | Beginner _(Preview)_ | Use Floe from the OpenAI Agents SDK today via MCP fallback, ahead of the native adapter. | [→](./openai-agents) |
+| **crewai-demo** | Python | CrewAI · `crewai-floe` | Intermediate | Per-agent budgets with a hard, server-side ceiling: a rigged loop halts at $1, and a procurement crew enforces allowlists and per-role caps. | [→](./crewai-demo) |
+| **vapi-voice-agent** | TypeScript | Vapi · GPT-4o · ElevenLabs · Exa | Intermediate | An outbound voice concierge that pays for live web search through Floe, tapers as it nears its budget, and audibly hard-stops at the cap. | [→](./vapi-voice-agent) |
+| **yield-optimizer** | TypeScript | Coinbase AgentKit | Intermediate | A treasury agent that borrows USDC against WETH, deploys to a yield strategy, monitors loan health, and repays. On-chain / self-custody. | [→](./yield-optimizer) |
+| **vapi-venice-voice-agent** | TypeScript | Vapi · Venice · ElevenLabs · Exa | Advanced | Same voice concierge, but the **LLM inference itself** runs on Venice through Floe — model *and* tools metered on one key, with an audible hard-stop. | [→](./vapi-venice-voice-agent) |
+| **vapi-memory-agent** | TypeScript | Vapi · Venice · HydraDB | Advanced | A voice concierge with **persistent memory** — it stores caller facts in HydraDB and recalls them, so a later call greets you by name. Brain (Venice) + memory (HydraDB) on **one Floe key**, no vendor keys. | [→](./vapi-memory-agent) |
+| **flash-arb-bot** | TypeScript | Coinbase AgentKit | Advanced | On-chain flash-loan arbitrage across Aerodrome pools — a crypto-native / MEV strategy on Floe's lending surface. | [→](./flash-arb-bot) |
 
-| Example | Language | Frameworks | What it shows |
-|---|---|---|---|
-| [`vapi-voice-agent`](./vapi-voice-agent) | TypeScript | Vapi · GPT-4o · ElevenLabs | A voice agent that pays per-call for its tools via x402 — the per-minute-economics use case |
-| [`vapi-venice-voice-agent`](./vapi-venice-voice-agent) | TypeScript | Vapi · Venice · ElevenLabs | Same, but the **LLM runs on Venice through Floe** too — model + tools metered on one credit line, with an audible budget hard-stop |
-| [`x402-client`](./x402-client) | TypeScript | AgentKit | Pay any x402 API through the Floe proxy — the minimal payment example |
-| [`agentkit-ts-chatbot`](./agentkit-ts-chatbot) | TypeScript | AgentKit · Vercel AI SDK | Conversational agent with wallet + x402 spend |
-| [`langchain-agent`](./langchain-agent) | Python | LangChain | Wallet + x402 spend in a LangChain agent |
-| [`crewai-demo`](./crewai-demo) | Python | CrewAI · `crewai-floe` | Per-agent budgets via the `crewai-floe` package — the $1-not-$414 loop-kill + a procurement crew with merchant allowlists |
-| [`mcp-demo`](./mcp-demo) | Config only | Claude Desktop / Cursor | Zero-install MCP connection — wallet + spend |
-| [`openai-agents`](./openai-agents) | TypeScript | OpenAI Agents SDK | x402 spend via MCP fallback *(Preview — native adapter on the way)* |
+> **Difficulty** is a rough guide: _Beginner_ = a key and a few minutes;
+> _Intermediate_ = a webhook, a framework, or a running server;
+> _Advanced_ = self-custody / on-chain setup (a funded wallet, an RPC endpoint).
+> Some on-chain examples exercise Floe's lending surface — check each README for
+> its current run status.
 
-### Self-custody & lending — advanced / on-chain
+## Demos
 
-> These depend on the on-chain lending surface (borrow/repay against collateral)
-> and are for self-custody and crypto-native use cases. Working-capital **credit
-> lines are in development** — see [Roadmap](#roadmap). Check each example's
-> README for its current run status.
+Short walkthroughs of the two most-requested flows. _(Videos coming — links land here.)_
 
-| Example | Language | Frameworks | What it shows |
-|---|---|---|---|
-| [`financial-os-loop`](./financial-os-loop) | TS + Python | AgentKit | The full end-to-end loop: wallet → fund → borrow → x402 spend → repay → credit record. *Lending steps depend on the credit roadmap.* |
-| [`yield-optimizer`](./yield-optimizer) | TypeScript | AgentKit | A treasury/yield agent using the lending surface |
-| [`flash-arb-bot`](./flash-arb-bot) | TypeScript | AgentKit | On-chain arbitrage via the flash-loan path (crypto-native / MEV) |
+<!-- DEMO: Venice voice-agent demo — a phone call where the LLM inference AND paid web-search tools both meter on one Floe key, tapering to an audible budget hard-stop. Replace this comment with the embed/link once the video is supplied. -->
 
-## Prerequisites
+<!-- DEMO: Persistent-memory demo — an agent that pays for durable memory across sessions on one Floe key. Replace this comment with the embed/link once the video is supplied. -->
 
-- Node.js 18+ (TypeScript) or Python 3.10+ (Python)
-- A Floe API key — [get one at the dashboard](https://dev-dashboard.floelabs.xyz)
-- For x402 spend: a funded wallet (fund with a card from the dashboard — no crypto on-ramp needed)
-- A Base mainnet RPC endpoint (for self-custody examples)
+## Quickstart
 
-## Quick start
+Every example is standalone. Pick one, `cd` into it, and follow its README.
 
 ```bash
-git clone https://github.com/Floe-Labs/floe-examples.git
-cd floe-examples
+git clone https://github.com/Floe-Labs/floe-cookbook.git
+cd floe-cookbook
 
-# Pick an example that runs today — e.g. the minimal x402 client
+# Pick an example — e.g. the minimal x402 payment client
 cd x402-client
-cp .env.example .env
-# Edit .env: FLOE_API_KEY (and RPC URL if the example needs it)
+cp .env.example .env          # fill in FLOE_API_KEY (and any keys the README lists)
 
-# TypeScript
+# TypeScript examples
 npm install && npx tsx index.ts
 
 # Python examples (e.g. langchain-agent)
-pip install -r requirements.txt && python main.py
+pip install -r requirements.txt && python agent.py
 ```
 
-**Don't have USDC?** Fund your agent wallet with fiat directly from the dashboard
-— card, bank transfer, Apple Pay, or Google Pay via Coinbase.
+You'll need a Floe API key — [get one at the dashboard](https://dev-dashboard.floelabs.xyz)
+and fund it with a card. No wallet or crypto required for the spend-layer
+examples; the on-chain examples list their extra prerequisites.
 
-## What the spend loop looks like
+## Contributing
 
-The pattern every live example follows:
-
-```
-Setup    register an agent + wallet (ERC-8004 identity, spend limits)
-Fund     USDC in via card / bank / Apple Pay / Google Pay — or on-chain
-Budget   set per-call, daily, and session spend caps; allowed destinations
-Spend    x402_fetch any of 2,000+ vendor API services through the Floe proxy
-Reason   estimate_x402_cost before paying; the agent stays inside its budget
-See      every call is a typed receipt — reconcile, alert, or revoke
-```
-
-No wallet for the operator to manage, no crypto for the agent to touch. The
-stablecoin rails are invisible.
-
-## SDKs used by these examples
-
-| Package | Install | Surface |
-|---|---|---|
-| `floe-agent` | `npm install floe-agent` | 47 actions (TypeScript) |
-| `floe-agentkit-actions` | `pip install floe-agentkit-actions` | 47 actions (Python) |
-| `@floelabs/mcp-server` | zero install (hosted) | 36 tools (MCP) |
-
-## Roadmap
-
-The spend layer is live today. Credit is built on top of it:
-
-- **Working capital / credit lines** — *in development.* The `borrow` / `repay`
-  steps in the lending examples exercise this surface; check each example's
-  README for current status.
-- **Unsecured / receivables-backed credit** — *in development.* Email
-  hello@floelabs.xyz for the design-partner program.
-- **Portable ERC-8004 credit record** — *in development.* Every transaction
-  builds the data behind it.
-
-## Links
-
-[Website](https://floelabs.xyz) · [Dashboard](https://dev-dashboard.floelabs.xyz) · [Docs](https://floe-labs.gitbook.io/docs) · [TypeScript SDK](https://github.com/Floe-Labs/agentkit-actions) · [Python SDK](https://github.com/Floe-Labs/agentkit-actions-py) · [MCP server](https://github.com/Floe-Labs/floe-mcp-server)
+New recipes are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) and the
+per-example README template at [docs/EXAMPLE_TEMPLATE.md](./docs/EXAMPLE_TEMPLATE.md).
 
 ## License
 
-MIT
+[MIT](./LICENSE) © Floe Labs
