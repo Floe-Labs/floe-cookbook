@@ -145,15 +145,18 @@ jobs:
   # ---------------------------------------------------------------------------
   ci:
     if: always()
-    needs: [typescript, python]
+    needs: [discover, typescript, python]
     runs-on: ubuntu-latest
     steps:
       - name: Aggregate result
         run: |
+          echo "discover:   ${{ needs.discover.result }}"
           echo "typescript: ${{ needs.typescript.result }}"
           echo "python:     ${{ needs.python.result }}"
-          if [ "${{ needs.typescript.result }}" = "failure" ] || [ "${{ needs.python.result }}" = "failure" ]; then
-            echo "One or more example jobs failed."
+          # Fail the single required status if discovery broke (which SKIPS the
+          # matrices rather than failing them) or any example job failed.
+          if [ "${{ needs.discover.result }}" = "failure" ] || [ "${{ needs.typescript.result }}" = "failure" ] || [ "${{ needs.python.result }}" = "failure" ]; then
+            echo "Discovery or one or more example jobs failed."
             exit 1
           fi
           echo "All example jobs passed (or were skipped)."
