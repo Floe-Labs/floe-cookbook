@@ -1,0 +1,162 @@
+name: CI
+
+# Validates every independent example on its own terms.
+# Each example is a standalone project (its own package.json / requirements.txt),
+# so the matrix is discovered at runtime instead of hardcoded — add an example
+# dir and it is picked up automatically, no workflow edit required.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref to keep the queue fast.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Discover which top-level dirs are TypeScript examples (have package.json)
+  # and which are Python examples (have requirements.txt / pyproject.toml / *.py).
+  # A dir can be BOTH (e.g. financial-os-loop, metered-llm) — it then runs in
+  # both downstream matrices.
+  # ---------------------------------------------------------------------------
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      ts: ${{ steps.set.outputs.ts }}
+      py: ${{ steps.set.outputs.py }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set
+        shell: bash
+        run: |
+          set -euo pipefail
+          ts="[]"
+          py="[]"
+          ts_list=""
+          py_list=""
+          for d in */; do
+            d="${d%/}"
+            # Skip tooling / meta dirs that are not examples.
+            case "$d" in .github|.git|docs) continue ;; esac
+            if [ -f "$d/package.json" ]; then
+              ts_list+="$d"$'\n'
+            fi
+            if [ -f "$d/requirements.txt" ] || [ -f "$d/pyproject.toml" ] || compgen -G "$d/*.py" > /dev/null; then
+              py_list+="$d"$'\n'
+            fi
+          done
+          if [ -n "$ts_list" ]; then
+            ts=$(printf '%s' "$ts_list" | grep -v '^$' | jq -R . | jq -sc .)
+          fi
+          if [ -n "$py_list" ]; then
+            py=$(printf '%s' "$py_list" | grep -v '^$' | jq -R . | jq -sc .)
+          fi
+          echo "ts=$ts" >> "$GITHUB_OUTPUT"
+          echo "py=$py" >> "$GITHUB_OUTPUT"
+          echo "TypeScript examples: $ts"
+          echo "Python examples:     $py"
+
+  # ---------------------------------------------------------------------------
+  # TypeScript: clean install + typecheck. Typecheck is skipped (not failed)
+  # when an example ships no tsconfig.json.
+  # ---------------------------------------------------------------------------
+  typescript:
+    needs: discover
+    if: ${{ needs.discover.outputs.ts != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # one broken example must not hide the status of the others
+      matrix:
+        dir: ${{ fromJSON(needs.discover.outputs.ts) }}
+    name: ts (${{ matrix.dir }})
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install
+        working-directory: ${{ matrix.dir }}
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+      - name: Typecheck
+        working-directory: ${{ matrix.dir }}
+        run: |
+          if [ -f tsconfig.json ]; then
+            npx --yes tsc --noEmit
+          else
+            echo "::notice title=typecheck skipped::${{ matrix.dir }} has no tsconfig.json — skipping tsc"
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Python: lint or syntax-check. Runs `ruff check` only where an example has
+  # opted in with a ruff config; otherwise falls back to a byte-compile smoke
+  # test so an un-linted example cannot fail the job on style alone.
+  # ---------------------------------------------------------------------------
+  python:
+    needs: discover
+    if: ${{ needs.discover.outputs.py != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dir: ${{ fromJSON(needs.discover.outputs.py) }}
+    name: py (${{ matrix.dir }})
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Lint or compile-check
+        working-directory: ${{ matrix.dir }}
+        run: |
+          has_ruff_cfg=false
+          if [ -f ruff.toml ] || [ -f .ruff.toml ]; then
+            has_ruff_cfg=true
+          elif [ -f pyproject.toml ] && grep -q '\[tool.ruff' pyproject.toml; then
+            has_ruff_cfg=true
+          fi
+
+          if [ "$has_ruff_cfg" = true ]; then
+            echo "Ruff config found — running ruff check"
+            pipx install ruff
+            ruff check .
+          else
+            echo "No ruff config — running py_compile syntax check"
+            if compgen -G "*.py" > /dev/null || find . -name '*.py' -not -path './.venv/*' | grep -q .; then
+              find . -name '*.py' -not -path './.venv/*' -exec python -m py_compile {} +
+            else
+              echo "::notice title=no python sources::${{ matrix.dir }} has no *.py files — nothing to compile"
+            fi
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Single required status: green only if every matrix leg succeeded.
+  # ---------------------------------------------------------------------------
+  ci:
+    if: always()
+    needs: [discover, typescript, python]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate result
+        run: |
+          echo "discover:   ${{ needs.discover.result }}"
+          echo "typescript: ${{ needs.typescript.result }}"
+          echo "python:     ${{ needs.python.result }}"
+          # Fail the single required status if discovery broke (which SKIPS the
+          # matrices rather than failing them) or any example job failed.
+          if [ "${{ needs.discover.result }}" = "failure" ] || [ "${{ needs.typescript.result }}" = "failure" ] || [ "${{ needs.python.result }}" = "failure" ]; then
+            echo "Discovery or one or more example jobs failed."
+            exit 1
+          fi
+          echo "All example jobs passed (or were skipped)."
