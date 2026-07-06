@@ -44,9 +44,9 @@ agents: rail-agnostic, one key, one ledger, no per-vendor accounts, no crypto.
 - **Voice agents** that pay per-lookup for live web search and stop cleanly at a budget — [`vapi-voice-agent`](./vapi-voice-agent), [`vapi-venice-voice-agent`](./vapi-venice-voice-agent) — or that **remember callers across calls** via HydraDB — [`vapi-memory-agent`](./vapi-memory-agent)
 - **Budget-capped multi-agent crews** where a runaway loop dies at $1, not $414 — [`crewai-demo`](./crewai-demo)
 - **Metered LLM access** — any OpenAI/Anthropic model behind one billed endpoint with a server-side cap — [`metered-llm`](./metered-llm)
-- **Conversational agents** that pay x402 APIs from natural language — [`agentkit-ts-chatbot`](./agentkit-ts-chatbot), [`langchain-agent`](./langchain-agent)
+- **Conversational agents** that pay x402 APIs from natural language — [`langchain-agent`](./langchain-agent)
 - **Zero-install access from Claude Desktop / Cursor** via hosted MCP — [`mcp-demo`](./mcp-demo)
-- **On-chain / self-custody agents** — treasury, yield, and flash-loan strategies — [`financial-os-loop`](./financial-os-loop), [`yield-optimizer`](./yield-optimizer), [`flash-arb-bot`](./flash-arb-bot)
+- **On-chain / self-custody agents** — treasury, yield, and flash-loan strategies — [`yield-optimizer`](./yield-optimizer), [`flash-arb-bot`](./flash-arb-bot)
 
 ## Examples
 
@@ -57,13 +57,11 @@ agents: rail-agnostic, one key, one ledger, no per-vendor accounts, no crypto.
 | **mcp-demo** | Config only | Claude Desktop / Cursor (MCP) | Beginner | Connect Claude Desktop or Cursor to Floe's hosted MCP server in one line — read markets, intents, and loans with zero install. | [→](./mcp-demo) |
 | **langchain-agent** | Python | LangChain | Beginner | A LangChain agent that exposes Floe actions as tools — check markets, borrow, monitor, and repay in natural language. | [→](./langchain-agent) |
 | **openai-agents** | Config only | OpenAI Agents SDK | Beginner _(Preview)_ | Use Floe from the OpenAI Agents SDK today via MCP fallback, ahead of the native adapter. | [→](./openai-agents) |
-| **agentkit-ts-chatbot** | TypeScript | Coinbase AgentKit · Vercel AI SDK | Intermediate | A conversational agent that borrows, pays an x402 endpoint, and repays through chat. Self-custody variant (signs from a key). | [→](./agentkit-ts-chatbot) |
 | **crewai-demo** | Python | CrewAI · `crewai-floe` | Intermediate | Per-agent budgets with a hard, server-side ceiling: a rigged loop halts at $1, and a procurement crew enforces allowlists and per-role caps. | [→](./crewai-demo) |
 | **vapi-voice-agent** | TypeScript | Vapi · GPT-4o · ElevenLabs · Exa | Intermediate | An outbound voice concierge that pays for live web search through Floe, tapers as it nears its budget, and audibly hard-stops at the cap. | [→](./vapi-voice-agent) |
 | **yield-optimizer** | TypeScript | Coinbase AgentKit | Intermediate | A treasury agent that borrows USDC against WETH, deploys to a yield strategy, monitors loan health, and repays. On-chain / self-custody. | [→](./yield-optimizer) |
 | **vapi-venice-voice-agent** | TypeScript | Vapi · Venice · ElevenLabs · Exa | Advanced | Same voice concierge, but the **LLM inference itself** runs on Venice through Floe — model *and* tools metered on one key, with an audible hard-stop. | [→](./vapi-venice-voice-agent) |
 | **vapi-memory-agent** | TypeScript | Vapi · Venice · HydraDB | Advanced | A voice concierge with **persistent memory** — it stores caller facts in HydraDB and recalls them, so a later call greets you by name. Brain (Venice) + memory (HydraDB) on **one Floe key**, no vendor keys. | [→](./vapi-memory-agent) |
-| **financial-os-loop** | TypeScript · Python | Coinbase AgentKit | Advanced | The canonical end-to-end loop: wallet → fund → borrow → x402 spend → repay → credit record, identical in TS and Python. Self-custody variant. | [→](./financial-os-loop) |
 | **flash-arb-bot** | TypeScript | Coinbase AgentKit | Advanced | On-chain flash-loan arbitrage across Aerodrome pools — a crypto-native / MEV strategy on Floe's lending surface. | [→](./flash-arb-bot) |
 
 > **Difficulty** is a rough guide: _Beginner_ = a key and a few minutes;
