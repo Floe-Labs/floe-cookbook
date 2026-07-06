@@ -1,28 +1,44 @@
 # agentkit-ts-chatbot
 
-Minimal conversational agent in TypeScript: **AgentKit + Vercel AI SDK + Floe**.
+A minimal conversational agent in TypeScript: **AgentKit + Vercel AI SDK + Floe**.
+It exposes every Floe action as a tool to an LLM, so you can borrow, pay an x402
+endpoint, and repay through natural language.
 
-> ⚠️ Self-custody variant. Signs from PRIVATE_KEY. For the no-crypto path
-> (managed wallet, no key in env, card funding), see the [Quickstart](https://floe-labs.gitbook.io/docs/getting-started/quickstart).
+> ⚠️ **Self-custody variant.** Signs from `PRIVATE_KEY`. For the no-crypto path
+> (managed wallet, no key in env, card funding), see the
+> [Quickstart](https://floe-labs.gitbook.io/docs/developers/agent-quickstart).
+> This mirrors the Python [`langchain-agent`](../langchain-agent) example.
 
-Mirrors the Python `langchain-agent` example. Shows how to expose every Floe action as a tool to an LLM and have it borrow, pay an x402 endpoint, and repay through natural language.
+## What it demonstrates
 
-## Components covered
+- Exposing Floe actions as tools an LLM can call from chat.
+- Borrow → pay an x402 endpoint → repay, driven by natural language.
+- The conversational (LLM-in-the-loop) counterpart to the deterministic
+  [`financial-os-loop`](../financial-os-loop).
 
-- 01 Agent Wallet (`GA`)
-- 03 Secured working capital (`GA`)
-- 05 x402 payment facilitator (`GA`)
+## Stack
 
-## Setup
+| | |
+|---|---|
+| Language | TypeScript |
+| Framework | Coinbase AgentKit · Vercel AI SDK |
+| Floe surface | Agent wallet · lending · x402 facilitator |
+
+## Prerequisites
+
+- Node.js 18+
+- A Floe API key — [get one at the dashboard](https://dev-dashboard.floelabs.xyz)
+- `PRIVATE_KEY`, `BASE_RPC_URL`, `OPENAI_API_KEY` (see `.env.example`)
+
+## Run
 
 ```bash
-cp .env.example .env
-# Fill in PRIVATE_KEY, BASE_RPC_URL, FLOE_API_KEY, OPENAI_API_KEY
+cp .env.example .env      # PRIVATE_KEY, BASE_RPC_URL, FLOE_API_KEY, OPENAI_API_KEY
 npm install
 npx tsx index.ts
 ```
 
-## Example session
+### Example session
 
 ```text
 You: What credit do I have available?
@@ -38,6 +54,8 @@ You: Repay loan 42.
 Agent: (calls repay_loan) Repaid. Collateral returned in the same tx.
 ```
 
-## Why two TS examples?
+## Learn more
 
-`agentkit-ts-chatbot` is conversational (LLM-in-the-loop). [`financial-os-loop`](../financial-os-loop/) is deterministic (script-driven). Use the chatbot to demo to humans; use the loop to verify the stack in CI.
+- [Floe docs](https://floe-labs.gitbook.io/docs)
+- [TypeScript SDK (`floe-agent`)](https://github.com/Floe-Labs/agentkit-actions)
+- [Vercel AI SDK](https://sdk.vercel.ai/docs)

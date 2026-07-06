@@ -1,17 +1,20 @@
 # financial-os-loop
 
-**The canonical end-to-end Floe example — self-custody variant.**
+**The canonical end-to-end Floe example — self-custody variant.** It wires every
+GA component of the Financial OS into a single runnable script, shipped identically
+in TypeScript (`index.ts`) and Python (`main.py`).
 
-> ⚠️ **For most agents you do not want to start here.** Floe's default flow is
-> a managed wallet provisioned per agent and a `floe_…` runtime API key — no
-> private key in your environment, no gas, no chain or RPC config. See the
-> [Quickstart](https://floe-labs.gitbook.io/docs/getting-started/quickstart)
-> for the no-crypto path. This example demonstrates the **self-custody**
-> variant: useful if you're holding signing keys in your own HSM/KMS or
-> integrating with an existing wallet stack. The bulk of Floe's API works
-> identically across both paths.
+> ⚠️ **For most agents you do not want to start here.** Floe's default flow is a
+> managed wallet provisioned per agent and a `floe_…` runtime API key — no private
+> key in your environment, no gas, no chain or RPC config. See the
+> [Quickstart](https://floe-labs.gitbook.io/docs/developers/agent-quickstart) for
+> the no-crypto path. This example demonstrates the **self-custody** variant:
+> useful if you hold signing keys in your own HSM/KMS or integrate an existing
+> wallet stack. The bulk of Floe's API works identically across both paths.
 
-Wires every GA component of the Financial OS in a single runnable script:
+## What it demonstrates
+
+The full loop, top to bottom:
 
 1. **Setup** — register an agent identity and a non-custodial wallet
 2. **Fund** — print a fiat on-ramp deep link (dashboard) for the operator
@@ -20,11 +23,15 @@ Wires every GA component of the Financial OS in a single runnable script:
 5. **Repay** — `repay_loan` (collateral auto-returns in the same tx; always attempted via `finally`)
 6. **Trust** — `register_credit_threshold` so future loans can react to utilization
 
-Shipping in TypeScript (`index.ts`) and Python (`main.py`) with identical behavior.
+## Stack
 
----
+| | |
+|---|---|
+| Language | TypeScript · Python (identical behavior) |
+| Framework | Coinbase AgentKit |
+| Floe surface | Agent wallet · fiat on-ramp · secured working capital · x402 facilitator · credit & trust bureau |
 
-## Components covered
+### Components covered
 
 | # | Component | Action(s) used |
 |---|---|---|
@@ -34,45 +41,34 @@ Shipping in TypeScript (`index.ts`) and Python (`main.py`) with identical behavi
 | 05 | x402 payment facilitator | `x402_fetch`, `estimate_x402_cost` |
 | 06 | Credit & trust bureau | `register_credit_threshold` |
 
-Unsecured working capital (04) and the ERC-8004 portable credit reader are `Preview` — email [hello@floelabs.xyz](mailto:hello@floelabs.xyz) for the design partner program.
-
----
+Unsecured working capital (04) and the ERC-8004 portable credit reader are
+`Preview` — email [hello@floelabs.xyz](mailto:hello@floelabs.xyz) for the design
+partner program.
 
 ## Prerequisites
 
 - Node.js 18+ (for TS) or Python 3.10+ (for Python)
-- A Floe API key from [dev-dashboard.floelabs.xyz](https://dev-dashboard.floelabs.xyz)
-- A funded self-custody wallet on Base (the example signs from `PRIVATE_KEY`).
-  If you don't want to manage a key, use the [managed-wallet quickstart](https://floe-labs.gitbook.io/docs/getting-started/quickstart)
+- A Floe API key — [get one at the dashboard](https://dev-dashboard.floelabs.xyz)
+- A funded self-custody wallet on Base (the example signs from `PRIVATE_KEY`). If
+  you don't want to manage a key, use the
+  [managed-wallet quickstart](https://floe-labs.gitbook.io/docs/developers/agent-quickstart)
   instead — the agent's wallet is custodied by Floe and funded with a card.
 
----
-
-## Setup
+## Run
 
 ```bash
 cp .env.example .env
 # Edit .env with PRIVATE_KEY, BASE_RPC_URL, FLOE_API_KEY, X402_TARGET_URL
 # Optional: BASE_NETWORK=sepolia to target Base Sepolia
+
+# TypeScript
+npm install && npx tsx index.ts
+
+# Python
+pip install -r requirements.txt && python main.py
 ```
 
-### Run (TypeScript)
-
-```bash
-npm install
-npx tsx index.ts
-```
-
-### Run (Python)
-
-```bash
-pip install -r requirements.txt
-python main.py
-```
-
----
-
-## What you should see
+### What you should see
 
 ```text
 [1/6] Registering agent + wallet ... 0xAgent... (chain=base)
@@ -86,19 +82,17 @@ python main.py
 Financial OS loop complete.
 ```
 
----
-
 ## Notes
 
-- The example uses small amounts (5 USDC borrow) so it is safe to run on mainnet.
+- Uses small amounts (5 USDC borrow) so it is safe to run on mainnet.
 - The spend step is wrapped in `try`/`finally` so a failing x402 fetch never strands an open loan.
 - The x402 step is **preflighted** — if `estimate_x402_cost.willExceedAvailable` is true, the script skips the fetch and proceeds to repay.
 - All write calls auto-approve the necessary tokens; no separate approval step.
 - Set `BASE_NETWORK=sepolia` in `.env` (and point `BASE_RPC_URL` at a Sepolia RPC) to run on testnet. Mainnet is the default.
-- The `x402_fetch` step will fail if `X402_TARGET_URL` is not actually x402-gated — supply any endpoint that returns HTTP 402.
+- The `x402_fetch` step fails if `X402_TARGET_URL` is not actually x402-gated — supply any endpoint that returns HTTP 402.
 
-## Links
+## Learn more
 
+- [Floe docs](https://floe-labs.gitbook.io/docs)
 - [TypeScript SDK (`floe-agent`)](https://github.com/Floe-Labs/agentkit-actions)
 - [Python SDK (`floe-agentkit-actions`)](https://github.com/Floe-Labs/agentkit-actions-py)
-- [Docs](https://floe-labs.gitbook.io/docs)

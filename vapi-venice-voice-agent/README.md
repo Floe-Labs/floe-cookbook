@@ -1,12 +1,26 @@
-# Vapi × Floe — Venice-powered voice agent (one credit line for model + tools)
+# Vapi × Floe — Venice-powered voice agent (one Floe key for model + tools)
 
-A phone-based voice concierge whose **LLM inference *and* paid tool calls both meter on a single Floe credit line** — with an audible budget taper and a hard-stop when the cap is reached.
+A phone-based voice concierge whose **LLM inference *and* paid tool calls both
+meter on a single Floe key** — with an audible budget taper and a hard-stop when
+the cap is reached.
+
+> This is the sibling of [`vapi-voice-agent`](../vapi-voice-agent), which governs
+> only the tool plane (its brain is GPT-4o, called directly by Vapi, off Floe).
+> Here the **model itself** is governed too.
+
+## What it demonstrates
 
 - **Compute plane** — the agent *thinks* on [Venice](https://venice.ai) (x402-native, open models) through Floe's metered proxy. Floe fronts one pooled Venice balance and debits the agent the at-cost token usage. No Venice key.
 - **Tool plane** — the agent *looks things up* via Exa web search, paid through Floe's x402 proxy. No wallet.
-- **One ceiling** — both draw on the same agent credit line + session spend-limit. When the budget runs out, the agent tells the caller and stops — it never overspends.
+- **One ceiling** — both planes draw on the same Floe key + session spend-limit. When the budget runs out, the agent tells the caller and stops — it never overspends.
 
-> This is the sibling of [`vapi-voice-agent`](../vapi-voice-agent), which governs only the tool plane (its brain is GPT-4o, called directly by Vapi, off Floe). Here the **model itself** is governed too.
+## Stack
+
+| | |
+|---|---|
+| Language | TypeScript |
+| Framework | Vapi · Venice (via Floe) · ElevenLabs · Exa |
+| Floe surface | Metered LLM proxy (`/v1/venice`) · x402 proxy · session spend-limit |
 
 ## How it works
 
@@ -20,10 +34,10 @@ A phone-based voice concierge whose **LLM inference *and* paid tool calls both m
    └────────┘                  └──────────────┘                       └────────────┘
       │  tool call (search_web)          │                                  ▲
       └──────────────────────────────────┴── POST /v1/proxy/fetch ──────────┘──▶ Exa
-                                             (same credit line)
+                                             (same Floe key)
 ```
 
-- Vapi's `custom-llm` provider points at `<SERVER_URL>/llm/<VAPI_SERVER_SECRET>` (the secret in the path authenticates this credit-line-spending endpoint — the server listens on `0.0.0.0`). The shim (`venice-llm.ts`) forwards each turn to Floe's OpenAI-compatible `/v1/venice/chat/completions` with `stream:false` (Floe meters per-call), then re-emits the completion to Vapi as a single-chunk SSE stream.
+- Vapi's `custom-llm` provider points at `<SERVER_URL>/llm/<VAPI_SERVER_SECRET>` (the secret in the path authenticates this spend-governed endpoint — the server listens on `0.0.0.0`). The shim (`venice-llm.ts`) forwards each turn to Floe's OpenAI-compatible `/v1/venice/chat/completions` with `stream:false` (Floe meters per-call), then re-emits the completion to Vapi as a single-chunk SSE stream.
 - `search_web` webhooks to `/vapi/tool-call`, which calls Exa through Floe's x402 proxy and appends a `[Floe budget: …]` line so the model can pace itself.
 - The **real** enforcer is Floe's server-side session spend-limit (set in `setup.ts`). When it's exhausted, both planes get a `402` and the agent says it's out of budget.
 
@@ -34,7 +48,7 @@ A phone-based voice concierge whose **LLM inference *and* paid tool calls both m
 - [ngrok](https://ngrok.com) (or any public tunnel) so Vapi can reach this server
 - Node 18+
 
-## Setup
+## Run
 
 ```bash
 cp .env.example .env      # fill in keys; pick VENICE_MODEL + FLOE_SPEND_LIMIT_RAW
@@ -45,7 +59,10 @@ npm run setup             # terminal 2 — creates the Venice assistant + sets t
 npm run call              # dials TARGET_PHONE_NUMBER — the agent calls you
 ```
 
-Ask a few factual lookups ("weather in San Francisco?", "what time does Tartine close?", "who won the game?", "latest news on X?"). Each search spends from the credit line; as the budget tapers the agent gets terser, and at the cap it tells you it's hit its limit and stops.
+Ask a few factual lookups ("weather in San Francisco?", "what time does Tartine
+close?", "who won the game?", "latest news on X?"). Each search spends from the
+Floe key; as the budget tapers the agent gets terser, and at the cap it tells you
+it's hit its limit and stops.
 
 ## Configuration
 
@@ -60,3 +77,9 @@ Ask a few factual lookups ("weather in San Francisco?", "what time does Tartine 
 - **Non-streaming.** Floe's metered Venice endpoint needs the terminal usage block to bill, so it refuses `stream:true`. The shim calls it with `stream:false` and fakes a one-chunk SSE stream back to Vapi. Snappier voice would stream tokens through the proxy — a follow-up, not needed here.
 - **Model choice matters for voice.** Smaller Venice models cut latency; the default balances speed, tool reliability, and answer quality. Browse `/vendors/venice-compute` for the current list.
 - **No secrets in the agent.** No Venice key (Floe's pool pays it); no wallet (the x402 proxy signs). The agent only holds a Floe API key.
+
+## Learn more
+
+- [Floe docs — Compute / metered LLM](https://floe-labs.gitbook.io/docs/x402-directory/compute)
+- [Vapi docs](https://docs.vapi.ai)
+- [Venice](https://venice.ai) · [Exa API](https://docs.exa.ai)
