@@ -41,7 +41,7 @@ agents: rail-agnostic, one key, one ledger, no per-vendor accounts, no crypto.
 
 ## What you can build
 
-- **Voice agents** that pay per-lookup for live web search and stop cleanly at a budget — [`vapi-voice-agent`](./vapi-voice-agent), [`vapi-venice-voice-agent`](./vapi-venice-voice-agent)
+- **Voice agents** that pay per-lookup for live web search and stop cleanly at a budget — [`vapi-voice-agent`](./vapi-voice-agent), [`vapi-venice-voice-agent`](./vapi-venice-voice-agent) — or that **remember callers across calls** via HydraDB — [`vapi-memory-agent`](./vapi-memory-agent)
 - **Budget-capped multi-agent crews** where a runaway loop dies at $1, not $414 — [`crewai-demo`](./crewai-demo)
 - **Metered LLM access** — any OpenAI/Anthropic model behind one billed endpoint with a server-side cap — [`metered-llm`](./metered-llm)
 - **Conversational agents** that pay x402 APIs from natural language — [`agentkit-ts-chatbot`](./agentkit-ts-chatbot), [`langchain-agent`](./langchain-agent)
@@ -62,6 +62,7 @@ agents: rail-agnostic, one key, one ledger, no per-vendor accounts, no crypto.
 | **vapi-voice-agent** | TypeScript | Vapi · GPT-4o · ElevenLabs · Exa | Intermediate | An outbound voice concierge that pays for live web search through Floe, tapers as it nears its budget, and audibly hard-stops at the cap. | [→](./vapi-voice-agent) |
 | **yield-optimizer** | TypeScript | Coinbase AgentKit | Intermediate | A treasury agent that borrows USDC against WETH, deploys to a yield strategy, monitors loan health, and repays. On-chain / self-custody. | [→](./yield-optimizer) |
 | **vapi-venice-voice-agent** | TypeScript | Vapi · Venice · ElevenLabs · Exa | Advanced | Same voice concierge, but the **LLM inference itself** runs on Venice through Floe — model *and* tools metered on one key, with an audible hard-stop. | [→](./vapi-venice-voice-agent) |
+| **vapi-memory-agent** | TypeScript | Vapi · Venice · HydraDB | Advanced | A voice concierge with **persistent memory** — it stores caller facts in HydraDB and recalls them, so a later call greets you by name. Brain (Venice) + memory (HydraDB) on **one Floe key**, no vendor keys. | [→](./vapi-memory-agent) |
 | **financial-os-loop** | TypeScript · Python | Coinbase AgentKit | Advanced | The canonical end-to-end loop: wallet → fund → borrow → x402 spend → repay → credit record, identical in TS and Python. Self-custody variant. | [→](./financial-os-loop) |
 | **flash-arb-bot** | TypeScript | Coinbase AgentKit | Advanced | On-chain flash-loan arbitrage across Aerodrome pools — a crypto-native / MEV strategy on Floe's lending surface. | [→](./flash-arb-bot) |
 
