@@ -55,7 +55,9 @@ const fmt = (n: number) => `$${n.toFixed(6)}`;
 
 async function ledger(): Promise<TxRow[]> {
   const res = await fetch(TX, { headers: { Authorization: `Bearer ${FLOE_API_KEY}` } });
-  return ((await res.json()) as { transactions: TxRow[] }).transactions ?? [];
+  const text = await res.text();
+  if (!res.ok) throw new Error(`Ledger ${res.status}: ${text.slice(0, 160)}`);
+  return ((JSON.parse(text) as { transactions: TxRow[] }).transactions ?? []);
 }
 
 async function main() {
