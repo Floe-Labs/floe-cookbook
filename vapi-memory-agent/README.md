@@ -38,9 +38,9 @@ Nothing about you sits in the prompt between calls — it's in HydraDB, retrieve
                                                                        HydraDB
 ```
 
-- `remember(fact)` → HydraDB **ingest**; `recall(query)` → HydraDB **query**. The model calls these like any tool; the server routes them through Floe's proxy.
-- The system prompt tells the agent to `recall` at the start of each call and `remember` anything worth keeping.
-- Memory persists because HydraDB is keyed to your Floe agent (auto-derived tenant) — so a later call recalls what an earlier one stored.
+- **Recall happens *before* the call, not during it.** `call.ts` queries HydraDB while the phone is ringing, injects what it finds into the prompt (a `{{memory}}` variable) and bakes a personalized greeting into the first message. So the caller hears *"Welcome back, Alex…"* the instant they pick up — no in-call lookup latency. (Recalling mid-call, through two proxies plus a model turn, is what made an earlier version feel broken.)
+- **Remember happens *during* the call.** When the caller shares a new fact, the model calls `remember(fact)` → HydraDB **ingest** through Floe's proxy. The prompt forces an actual tool call per fact (a model that just *says* "I'll remember" without calling the tool stores nothing).
+- Memory persists because HydraDB is keyed to your Floe agent (auto-derived tenant) — so the next call recalls what this one stored.
 
 ## Setup
 

@@ -39,13 +39,17 @@ const vapi = new VapiClient({ token: VAPI_API_KEY! });
 const BASE_URL = (SERVER_URL ?? "").replace(/\/+$/, "");
 const toolCallUrl = `${BASE_URL}/vapi/tool-call`;
 
-const SYSTEM_PROMPT = `You are a warm, concise voice concierge with LONG-TERM MEMORY that persists across calls.
+const SYSTEM_PROMPT = `You are "Ada", a warm, efficient phone concierge with long-term memory. Never say you are an AI, a language model, or state any model name — you are simply Ada.
 
-At the START of every call, call recall with a short query about the caller (e.g. "caller preferences and details") and greet them using anything you find — by name and preferences if you know them. If recall returns nothing, greet them as a new caller and offer to remember things for next time.
+WHAT YOU ALREADY KNOW ABOUT THIS CALLER:
+{{memory}}
 
-Whenever the caller shares something worth keeping — their name, preferences, allergies, plans, important facts — call remember with a single clear sentence to store it. Confirm briefly out loud ("I'll remember that").
+Use that naturally — you already know it, so don't make them repeat it and never say you're "looking it up" or "checking." You just know them.
 
-Keep spoken replies to 1-2 sentences. You're on a phone call.`;
+Your memory tool:
+- remember(fact): store ONE clear fact. The instant the caller shares any NEW personal detail — a name, preference, allergy, plan, or fact — you MUST call remember for it. If they say several things at once, call remember SEPARATELY for each. Actually invoke the tool every time; saying "I'll remember" without calling it is a failure. Reply in one short sentence after.
+
+Keep every spoken reply to ONE short sentence. You're on a phone call, so be quick and warm.`;
 
 async function provisionMemory(): Promise<void> {
   console.log("🧠 Provisioning HydraDB memory store...");
@@ -117,7 +121,9 @@ async function main() {
     name: "Floe Memory Concierge",
     model: model as Parameters<typeof vapi.assistants.create>[0]["model"],
     voice: { provider: "11labs", voiceId: "cgSgspJ2msm6clMCkdW9" },
-    firstMessage: "Hi! Give me one second while I see if we've talked before.",
+    // Fallback greeting; call.ts overrides this per-call with a personalized one
+    // (built from memory BEFORE dialing, so the caller hears it instantly).
+    firstMessage: "Hi, I'm Ada — how can I help?",
   });
   console.log(`   ✅ ${assistant.name} (${assistant.id})\n`);
 

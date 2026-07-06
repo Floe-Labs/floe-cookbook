@@ -114,30 +114,34 @@ app.post("/vapi/tool-call", async (request, reply) => {
   const calls = body?.message?.toolCallList;
   if (body?.message?.type !== "tool-calls" || !Array.isArray(calls)) return { results: [] };
 
-  const results = [];
-  for (const call of calls) {
-    const name = call.function?.name;
-    let args: Record<string, unknown> = {};
-    try {
-      args = typeof call.function?.arguments === "string" ? JSON.parse(call.function.arguments) : call.function?.arguments || {};
-    } catch {
-      /* leave empty */
-    }
-    let result: string;
-    try {
-      if (name === "remember" && typeof args.fact === "string" && args.fact.trim()) {
-        result = await remember(args.fact.trim());
-      } else if (name === "recall" && typeof args.query === "string" && args.query.trim()) {
-        result = await recall(args.query.trim());
-      } else {
-        result = `Unknown or malformed tool call: ${name}`;
+  // Run all tool calls in PARALLEL — the model often emits several `remember`s
+  // in one turn (one per fact), and running them sequentially made the agent
+  // stall ("just a sec…") while each HydraDB ingest round-tripped.
+  const results = await Promise.all(
+    calls.map(async (call: any) => {
+      const name = call.function?.name;
+      let args: Record<string, unknown> = {};
+      try {
+        args = typeof call.function?.arguments === "string" ? JSON.parse(call.function.arguments) : call.function?.arguments || {};
+      } catch {
+        /* leave empty */
       }
-    } catch (err) {
-      console.error(`   ❌ ${name} failed: ${(err as Error).message}`);
-      result = "My memory is momentarily unavailable — let's continue and I'll try again.";
-    }
-    results.push({ name, toolCallId: call.id, result });
-  }
+      let result: string;
+      try {
+        if (name === "remember" && typeof args.fact === "string" && args.fact.trim()) {
+          result = await remember(args.fact.trim());
+        } else if (name === "recall" && typeof args.query === "string" && args.query.trim()) {
+          result = await recall(args.query.trim());
+        } else {
+          result = `Unknown or malformed tool call: ${name}`;
+        }
+      } catch (err) {
+        console.error(`   ❌ ${name} failed: ${(err as Error).message}`);
+        result = "My memory is momentarily unavailable — let's continue and I'll try again.";
+      }
+      return { name, toolCallId: call.id, result };
+    }),
+  );
   return { results };
 });
 
