@@ -85,5 +85,5 @@ Runs the memory loop (remember → recall → the model uses it) and prints the 
 
 ## Notes
 
-- **Per-caller memory (multi-tenant):** this demo uses one memory store for the agent (fine for a single caller). To isolate callers, pass `subTenantId` (e.g. the caller's number) on the ingest/query calls — HydraDB namespaces within your forced tenant. See [the vendor page](https://dev-dashboard.floelabs.xyz/vendors/hydradb).
+- **Per-caller memory (multi-tenant):** this demo uses one memory store for the agent (fine for a single caller). To isolate callers, pass `subTenantId` on the ingest/query calls — HydraDB namespaces within your forced tenant. Use an **opaque or hashed caller id** (e.g. `sha256(phoneNumber)` or an internal account id), not the raw phone number — don't bake PII into the tenant key. See [the vendor page](https://dev-dashboard.floelabs.xyz/vendors/hydradb).
 - **No secrets in the agent:** no HydraDB key, no Venice key, no wallet — just one Floe key. The proxy signs and meters every vendor call.

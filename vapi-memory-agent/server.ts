@@ -27,6 +27,10 @@ const FLOE_VENICE_URL = "https://credit-api.floelabs.xyz/v1/venice/chat/completi
 const HYDRA_BASE = "https://marketplace.floelabs.xyz/v1/db/hydradb";
 const VENICE_MODEL = process.env.VENICE_MODEL || "mistral-small-3-2-24b-instruct";
 const VAPI_SERVER_SECRET = process.env.VAPI_SERVER_SECRET;
+// Separate, independently-rotatable secret for the LLM shim URL path. Kept
+// distinct from VAPI_SERVER_SECRET so a leak of the (Vapi-held) URL-path token
+// authorizes ONLY model inference — not memory writes or the tool webhook.
+const LLM_SHIM_SECRET = process.env.LLM_SHIM_SECRET;
 const PORT = parseInt(process.env.PORT || "3000", 10);
 const FETCH_TIMEOUT_MS = 20_000;
 const LLM_TIMEOUT_MS = 60_000;
@@ -36,7 +40,11 @@ if (!FLOE_API_KEY) {
   process.exit(1);
 }
 if (!VAPI_SERVER_SECRET) {
-  console.error("Set VAPI_SERVER_SECRET in .env (authenticates Vapi webhooks + the LLM shim)");
+  console.error("Set VAPI_SERVER_SECRET in .env (authenticates Vapi tool-call webhooks)");
+  process.exit(1);
+}
+if (!LLM_SHIM_SECRET) {
+  console.error("Set LLM_SHIM_SECRET in .env (gates the /llm shim URL path)");
   process.exit(1);
 }
 
@@ -74,7 +82,8 @@ async function remember(fact: string): Promise<string> {
     type: "memory",
     memories: [{ text: fact, infer: true }],
   });
-  console.log(`   🧠 remember → HydraDB ingest ($${costUsdc ?? "?"}): "${fact.slice(0, 60)}"`);
+  // Do NOT log the fact text — it's caller PII. Log only non-sensitive metadata.
+  console.log(`   🧠 remember → HydraDB ingest ($${costUsdc ?? "?"}): chars=${fact.length}`);
   return json?.result?.success ? "Got it — I'll remember that." : "I had trouble saving that.";
 }
 
@@ -86,6 +95,7 @@ async function recall(query: string): Promise<string> {
     maxResults: 5,
   });
   const chunks: any[] = json?.result?.data?.chunks ?? [];
+  // Do NOT log the query text — it's caller content. Log hit count + cost only.
   console.log(`   🔎 recall → HydraDB query ($${costUsdc ?? "?"}): ${chunks.length} hit(s)`);
   if (chunks.length === 0) return "I don't have anything on that yet.";
   const memories = chunks.map((c) => String(c.chunk_content || "").split("\n")[0]).filter(Boolean);
@@ -101,7 +111,7 @@ registerVeniceLlm(app, {
   floeVeniceUrl: FLOE_VENICE_URL,
   veniceModel: VENICE_MODEL,
   timeoutMs: LLM_TIMEOUT_MS,
-  authToken: VAPI_SERVER_SECRET,
+  authToken: LLM_SHIM_SECRET,
 });
 
 app.post("/vapi/tool-call", async (request, reply) => {
@@ -119,10 +129,15 @@ app.post("/vapi/tool-call", async (request, reply) => {
   // stall ("just a sec…") while each HydraDB ingest round-tripped.
   const results = await Promise.all(
     calls.map(async (call: any) => {
-      const name = call.function?.name;
+      // A null/malformed entry must NOT throw here — this runs before the inner
+      // try/catch, so a throw rejects Promise.all → the webhook 500s and Vapi
+      // drops the WHOLE batch. Optional-chain the entry and fall through to a
+      // safe result for anything unusable.
+      const name = call?.function?.name;
       let args: Record<string, unknown> = {};
       try {
-        args = typeof call.function?.arguments === "string" ? JSON.parse(call.function.arguments) : call.function?.arguments || {};
+        const rawArgs = call?.function?.arguments;
+        args = typeof rawArgs === "string" ? JSON.parse(rawArgs) : rawArgs || {};
       } catch {
         /* leave empty */
       }
@@ -139,7 +154,7 @@ app.post("/vapi/tool-call", async (request, reply) => {
         console.error(`   ❌ ${name} failed: ${(err as Error).message}`);
         result = "My memory is momentarily unavailable — let's continue and I'll try again.";
       }
-      return { name, toolCallId: call.id, result };
+      return { name, toolCallId: call?.id, result };
     }),
   );
   return { results };

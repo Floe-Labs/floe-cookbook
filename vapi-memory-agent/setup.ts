@@ -17,13 +17,17 @@ const VAPI_API_KEY = process.env.VAPI_API_KEY;
 const SERVER_URL = process.env.SERVER_URL;
 const FLOE_API_KEY = process.env.FLOE_API_KEY;
 const VAPI_SERVER_SECRET = process.env.VAPI_SERVER_SECRET;
+// Separate secret for the LLM shim URL path (independently rotatable from the
+// tool-webhook secret). Vapi carries it in the custom-llm URL; a leak of it
+// authorizes model inference only — not the memory tool webhook.
+const LLM_SHIM_SECRET = process.env.LLM_SHIM_SECRET;
 const VENICE_MODEL = process.env.VENICE_MODEL || "mistral-small-3-2-24b-instruct";
 // USDC base units (6 dp): 250000 = $0.25 — one ceiling over model + memory.
 const FLOE_SPEND_LIMIT_RAW = process.env.FLOE_SPEND_LIMIT_RAW || "250000";
 const FLOE_CREDIT_API = process.env.FLOE_CREDIT_API_URL || "https://credit-api.floelabs.xyz";
 const HYDRA_BASE = "https://marketplace.floelabs.xyz/v1/db/hydradb";
 
-for (const [k, v] of Object.entries({ VAPI_API_KEY, SERVER_URL, FLOE_API_KEY, VAPI_SERVER_SECRET })) {
+for (const [k, v] of Object.entries({ VAPI_API_KEY, SERVER_URL, FLOE_API_KEY, VAPI_SERVER_SECRET, LLM_SHIM_SECRET })) {
   if (!v) {
     console.error(`Set ${k} in .env`);
     process.exit(1);
@@ -111,8 +115,9 @@ async function main() {
   console.log("🤖 Creating assistant (Venice via Floe + memory tools)...");
   const model = {
     provider: "custom-llm" as const,
-    // Secret in the path authenticates the credit-line-spending shim (server.ts).
-    url: `${BASE_URL}/llm/${VAPI_SERVER_SECRET}`,
+    // Dedicated shim secret in the path authenticates the credit-line-spending
+    // LLM endpoint (server.ts) — separate from the tool-webhook secret.
+    url: `${BASE_URL}/llm/${LLM_SHIM_SECRET}`,
     model: VENICE_MODEL,
     messages: [{ role: "system" as const, content: SYSTEM_PROMPT }],
     toolIds: [rememberTool.id, recallTool.id],

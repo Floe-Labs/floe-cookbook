@@ -2,7 +2,8 @@
  * Venice LLM shim — the "compute" plane, governed by Floe.
  *
  * Vapi's custom-llm provider POSTs an OpenAI-compatible chat request to
- * `<SERVER_URL>/llm/chat/completions`. This shim forwards it to Floe's METERED
+ * `<SERVER_URL>/llm/<token>/chat/completions` (the `<token>` path segment is the
+ * shim secret — omit it and the endpoint 401s). This shim forwards it to Floe's METERED
  * Venice endpoint (`/v1/venice/chat/completions`) with a Floe agent key. Floe
  * keeps one pooled Venice balance (its own float), pays Venice per call, and
  * debits the AGENT only the at-cost token usage (X-Floe-Cost-USDC) against the
@@ -138,10 +139,10 @@ function streamCompletion(reply: FastifyReply, completion: OpenAiCompletion): vo
     model: completion.model ?? "venice",
   };
   const delta: Record<string, unknown> = { role: "assistant" };
-  if (choice?.message.content) delta.content = choice.message.content;
+  if (choice?.message?.content) delta.content = choice.message.content;
   // OpenAI streaming requires `index` on each tool_call delta — Vapi won't
   // execute the tool without it. Venice returns tool_calls without an index.
-  if (choice?.message.tool_calls) {
+  if (choice?.message?.tool_calls) {
     delta.tool_calls = choice.message.tool_calls.map((tc, i) =>
       tc && typeof tc === "object" && "index" in tc ? tc : { index: i, ...(tc as object) },
     );

@@ -36,11 +36,24 @@ if (!/^\+[1-9]\d{6,14}$/.test(TARGET_PHONE_NUMBER!)) {
   process.exit(1);
 }
 const auth = { Authorization: `Bearer ${FLOE_API_KEY}`, "Content-Type": "application/json" };
+const FETCH_TIMEOUT_MS = 15_000;
+
+/** fetch with an AbortController timeout so a stalled HydraDB/Venice call can't
+ *  hang the outbound-call setup indefinitely (mirrors server.ts's callHydra). */
+async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 /** Pull this caller's memories from HydraDB (before the call). */
 async function fetchMemories(): Promise<string[]> {
   try {
-    const res = await fetch(PROXY, {
+    const res = await fetchWithTimeout(PROXY, {
       method: "POST",
       headers: auth,
       body: JSON.stringify({ url: `${HYDRA}/query`, method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: "caller name, preferences, allergies, plans, details", type: "memory", maxResults: 8 }) }),
@@ -48,7 +61,8 @@ async function fetchMemories(): Promise<string[]> {
     const d = (await res.json()) as any;
     const chunks: any[] = d?.result?.data?.chunks ?? [];
     return chunks.map((c) => String(c.chunk_content || "").split("\n")[0].trim()).filter(Boolean);
-  } catch {
+  } catch (err) {
+    console.warn(`   ⚠️  memory lookup failed (${(err as Error).message}) — proceeding without recall.`);
     return [];
   }
 }
@@ -59,7 +73,7 @@ async function buildGreeting(memories: string[]): Promise<string> {
     return "Hey, I'm Ada! I don't think we've spoken before — tell me a bit about yourself and I'll remember it for next time.";
   }
   try {
-    const res = await fetch(VENICE, {
+    const res = await fetchWithTimeout(VENICE, {
       method: "POST",
       headers: auth,
       body: JSON.stringify({
@@ -74,7 +88,8 @@ async function buildGreeting(memories: string[]): Promise<string> {
     const d = (await res.json()) as any;
     const g = d.choices?.[0]?.message?.content?.trim();
     return g || `Welcome back! Great to hear from you again.`;
-  } catch {
+  } catch (err) {
+    console.warn(`   ⚠️  greeting generation failed (${(err as Error).message}) — using a generic greeting.`);
     return "Welcome back! Great to hear from you again.";
   }
 }
