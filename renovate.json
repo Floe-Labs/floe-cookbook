@@ -1,0 +1,46 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits"
+  ],
+  "timezone": "Etc/UTC",
+  "schedule": ["before 9am on thursday"],
+  "prConcurrentLimit": 6,
+  "prHourlyLimit": 4,
+  "labels": ["dependencies"],
+  "rangeStrategy": "bump",
+  "packageRules": [
+    {
+      "description": "Group all non-major npm updates across every example into one weekly PR (low noise).",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "npm non-major"
+    },
+    {
+      "description": "Group all non-major Python (requirements.txt / pyproject) updates.",
+      "matchManagers": ["pip_requirements", "pep621"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "python non-major"
+    },
+    {
+      "description": "Auto-merge dev dependency minor/patch bumps — low risk, keeps tooling current.",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
+    },
+    {
+      "description": "Group + auto-merge GitHub Actions minor/patch bumps (replaces the old dependabot github-actions rule).",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "github-actions",
+      "automerge": true
+    },
+    {
+      "description": "Never auto-merge majors — always open a reviewable PR.",
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    }
+  ]
+}
