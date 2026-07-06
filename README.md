@@ -72,11 +72,23 @@ agents: rail-agnostic, one key, one ledger, no per-vendor accounts, no crypto.
 
 ## Demos
 
-Short walkthroughs of the two most-requested flows. _(Videos coming — links land here.)_
+Two of the most-requested flows, end to end. Click a card to watch (~90s each).
 
-<!-- DEMO: Venice voice-agent demo — a phone call where the LLM inference AND paid web-search tools both meter on one Floe key, tapering to an audible budget hard-stop. Replace this comment with the embed/link once the video is supplied. -->
+### Venice voice agent — model *and* tools on one Floe key
 
-<!-- DEMO: Persistent-memory demo — an agent that pays for durable memory across sessions on one Floe key. Replace this comment with the embed/link once the video is supplied. -->
+<a href="https://github.com/Floe-Labs/floe-cookbook/releases/download/demo-media-v1/venice-audiogram.mp4"><img src="./docs/media/poster-venice.png" alt="Watch the Venice voice-agent demo" width="640"></a>
+
+A phone call where the LLM inference **and** the paid web-search tools both meter
+on a single Floe key — tapering as the budget runs down to an audible hard-stop.
+See [`vapi-venice-voice-agent`](./vapi-venice-voice-agent).
+
+### Persistent-memory voice concierge — recall across calls
+
+<a href="https://github.com/Floe-Labs/floe-cookbook/releases/download/demo-media-v1/memory-demo-labeled.mp4"><img src="./docs/media/poster-memory.png" alt="Watch the persistent-memory demo" width="640"></a>
+
+The agent stores caller facts in HydraDB and recalls them on a later call — brain
+(Venice) + memory (HydraDB) on **one Floe key**, no vendor keys.
+See [`vapi-memory-agent`](./vapi-memory-agent).
 
 ## Quickstart
 
