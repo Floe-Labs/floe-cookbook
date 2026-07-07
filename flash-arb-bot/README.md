@@ -5,7 +5,7 @@ arbitrage when profitable. A crypto-native / MEV strategy on Floe's lending
 surface. On-chain / self-custody.
 
 > This example is on-chain and signs from a private key. It is for crypto-native
-> use cases — see the [Quickstart](https://floe-labs.gitbook.io/docs/developers/agent-quickstart)
+> use cases — see the [Quickstart](https://floe-labs.gitbook.io/docs/quickstart)
 > for the walletless spend-layer path.
 
 ## What it demonstrates

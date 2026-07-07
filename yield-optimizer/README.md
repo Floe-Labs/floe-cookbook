@@ -5,7 +5,7 @@ strategy, and repays before maturity. On-chain / self-custody.
 
 > This example uses Floe's on-chain lending surface and signs from a private key.
 > For the walletless, card-funded path, see the
-> [Quickstart](https://floe-labs.gitbook.io/docs/developers/agent-quickstart).
+> [Quickstart](https://floe-labs.gitbook.io/docs/quickstart).
 
 ## What it demonstrates
 
