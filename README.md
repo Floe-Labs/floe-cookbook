@@ -5,7 +5,6 @@
 
 <p align="center">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
-  <!-- CI badge is a placeholder: it points at .github/workflows/ci.yml, which does not exist yet. Create that workflow (devops) to make this badge live. -->
   <a href="./.github/workflows/ci.yml"><img src="https://github.com/Floe-Labs/floe-cookbook/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://floe-labs.gitbook.io/docs"><img src="https://img.shields.io/badge/docs-gitbook-brightgreen.svg" alt="Docs"></a>
   <a href="https://x.com/FloeLabs"><img src="https://img.shields.io/badge/follow-%40FloeLabs-black.svg" alt="X / Twitter"></a>
@@ -16,7 +15,7 @@
   <a href="https://floelabs.xyz">Website</a> ·
   <a href="https://dev-dashboard.floelabs.xyz">Dashboard</a> ·
   <a href="https://floe-labs.gitbook.io/docs">Docs</a> ·
-  <a href="https://floe-labs.gitbook.io/docs/developers/agent-quickstart">Quickstart</a>
+  <a href="https://floe-labs.gitbook.io/docs/quickstart">Quickstart</a>
 </p>
 
 ---
