@@ -1,5 +1,5 @@
 {
-  "name": "vapi-memory-agent",
+  "name": "hydra-memory-agent",
   "version": "1.0.0",
   "private": true,
   "description": "Vapi voice agent with persistent memory (HydraDB) and Venice brain — model + memory on one Floe key",
