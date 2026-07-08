@@ -84,7 +84,7 @@ See [`vapi-venice-voice-agent`](./vapi-venice-voice-agent).
 
 ### Persistent-memory voice concierge — recall across calls
 
-<a href="https://github.com/Floe-Labs/floe-cookbook/releases/download/demo-media-v1/memory-demo-labeled.mp4"><img src="./docs/media/poster-memory.png" alt="Watch the persistent-memory demo" width="640"></a>
+<a href="https://github.com/Floe-Labs/floe-cookbook/releases/download/demo-media-v2/memory-demo-labeled.mp4"><img src="./docs/media/poster-memory.png" alt="Watch the persistent-memory demo" width="640"></a>
 
 The agent stores caller facts in HydraDB and recalls them on a later call — brain
 (Venice) + memory (HydraDB) on **one Floe key**, no vendor keys.
