@@ -40,7 +40,7 @@ agents: rail-agnostic, one key, one ledger, no per-vendor accounts, no crypto.
 
 ## What you can build
 
-- **Voice agents** that pay per-lookup for live web search and stop cleanly at a budget — [`vapi-voice-agent`](./vapi-voice-agent), [`vapi-venice-voice-agent`](./vapi-venice-voice-agent) — or that **remember callers across calls** via HydraDB — [`vapi-memory-agent`](./vapi-memory-agent)
+- **Voice agents** that pay per-lookup for live web search and stop cleanly at a budget — [`vapi-voice-agent`](./vapi-voice-agent), [`vapi-venice-voice-agent`](./vapi-venice-voice-agent) — or that **remember callers across calls** via HydraDB — [`hydra-memory-agent`](./hydra-memory-agent)
 - **Budget-capped multi-agent crews** where a runaway loop dies at $1, not $414 — [`crewai-demo`](./crewai-demo)
 - **Metered LLM access** — any OpenAI/Anthropic model behind one billed endpoint with a server-side cap — [`metered-llm`](./metered-llm)
 - **Conversational agents** that pay x402 APIs from natural language — [`langchain-agent`](./langchain-agent)
@@ -60,7 +60,7 @@ agents: rail-agnostic, one key, one ledger, no per-vendor accounts, no crypto.
 | **vapi-voice-agent** | TypeScript | Vapi · GPT-4o · ElevenLabs · Exa | Intermediate | An outbound voice concierge that pays for live web search through Floe, tapers as it nears its budget, and audibly hard-stops at the cap. | [→](./vapi-voice-agent) |
 | **yield-optimizer** | TypeScript | Coinbase AgentKit | Intermediate | A treasury agent that borrows USDC against WETH, deploys to a yield strategy, monitors loan health, and repays. On-chain / self-custody. | [→](./yield-optimizer) |
 | **vapi-venice-voice-agent** | TypeScript | Vapi · Venice · ElevenLabs · Exa | Advanced | Same voice concierge, but the **LLM inference itself** runs on Venice through Floe — model *and* tools metered on one key, with an audible hard-stop. | [→](./vapi-venice-voice-agent) |
-| **vapi-memory-agent** | TypeScript | Vapi · Venice · HydraDB | Advanced | A voice concierge with **persistent memory** — it stores caller facts in HydraDB and recalls them, so a later call greets you by name. Brain (Venice) + memory (HydraDB) on **one Floe key**, no vendor keys. | [→](./vapi-memory-agent) |
+| **hydra-memory-agent** | TypeScript | Vapi · Venice · HydraDB | Advanced | A voice concierge with **persistent memory** — it stores caller facts in HydraDB and recalls them, so a later call greets you by name. Brain (Venice) + memory (HydraDB) on **one Floe key**, no vendor keys. | [→](./hydra-memory-agent) |
 | **flash-arb-bot** | TypeScript | Coinbase AgentKit | Advanced | On-chain flash-loan arbitrage across Aerodrome pools — a crypto-native / MEV strategy on Floe's lending surface. | [→](./flash-arb-bot) |
 
 > **Difficulty** is a rough guide: _Beginner_ = a key and a few minutes;
@@ -83,11 +83,11 @@ See [`vapi-venice-voice-agent`](./vapi-venice-voice-agent).
 
 ### Persistent-memory voice concierge — recall across calls
 
-<a href="https://github.com/Floe-Labs/floe-cookbook/releases/download/demo-media-v1/memory-demo-labeled.mp4"><img src="./docs/media/poster-memory.png" alt="Watch the persistent-memory demo" width="640"></a>
+<a href="https://github.com/Floe-Labs/floe-cookbook/releases/download/demo-media-v2/memory-demo-labeled.mp4"><img src="./docs/media/poster-memory.png" alt="Watch the persistent-memory demo" width="640"></a>
 
 The agent stores caller facts in HydraDB and recalls them on a later call — brain
 (Venice) + memory (HydraDB) on **one Floe key**, no vendor keys.
-See [`vapi-memory-agent`](./vapi-memory-agent).
+See [`hydra-memory-agent`](./hydra-memory-agent).
 
 ## Quickstart
 
