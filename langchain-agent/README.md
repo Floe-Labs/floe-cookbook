@@ -1,7 +1,12 @@
-# LangChain Agent
+# LangChain Agent (Preview)
 
 A LangChain agent with Floe's actions exposed as tools. Ask it to check markets,
 borrow, or manage loans in natural language, and it calls Floe to execute.
+
+> **Status: `Preview`.** The agent wiring in `agent.py` ships commented out —
+> running it prints setup guidance rather than starting the chat loop. Uncomment
+> the marked block and configure your wallet to run it against the live API; a
+> fully wired version is on the way.
 
 ## What it demonstrates
 
@@ -31,8 +36,9 @@ pip install -r requirements.txt
 python agent.py
 ```
 
-You chat with the agent in natural language; it calls Floe actions to execute
-your requests.
+As shipped, the script prints setup guidance (see the status note above). Once
+you uncomment the agent block and configure your wallet, you chat with the agent
+in natural language and it calls Floe actions to execute your requests.
 
 ## Key actions used
 

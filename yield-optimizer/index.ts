@@ -2,7 +2,7 @@
  * Yield Optimizer Example (self-custody variant)
  *
  * ⚠️  Signs from PRIVATE_KEY. For the managed-wallet path (no key in env),
- *     see https://floe-labs.gitbook.io/docs/getting-started/quickstart.
+ *     see https://floe-labs.gitbook.io/docs/quickstart.
  *
  * Borrows USDC against WETH collateral, holds for yield strategy,
  * then repays before maturity. Demonstrates: instant_borrow,
