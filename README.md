@@ -52,22 +52,23 @@ agents: rail-agnostic, one key, one ledger, no per-vendor accounts, no crypto.
 | Example | Language | Framework / Stack | Difficulty | What it shows | Link |
 |---|---|---|---|---|---|
 | **metered-llm** | TypeScript · Python | OpenAI SDK (framework-agnostic) | Beginner | Route any OpenAI/Anthropic model through Floe's metered proxy — per-token billing on one key, capped server-side, your provider key never stored. | [→](./metered-llm) |
-| **x402-client** | TypeScript | Coinbase AgentKit | Beginner | The minimal payment example: delegate credit to the Floe facilitator, then call any x402 API with automatic, gas-free payment. | [→](./x402-client) |
+| **x402-client** | TypeScript | Coinbase AgentKit | Beginner _(Preview)_ | The minimal payment example: delegate credit to the Floe facilitator, then call any x402 API with automatic, gas-free payment. | [→](./x402-client) |
 | **mcp-demo** | Config only | Claude Desktop / Cursor (MCP) | Beginner | Connect Claude Desktop or Cursor to Floe's hosted MCP server in one line — read markets, intents, and loans with zero install. | [→](./mcp-demo) |
-| **langchain-agent** | Python | LangChain | Beginner | A LangChain agent that exposes Floe actions as tools — check markets, borrow, monitor, and repay in natural language. | [→](./langchain-agent) |
+| **langchain-agent** | Python | LangChain | Beginner _(Preview)_ | A LangChain agent that exposes Floe actions as tools — check markets, borrow, monitor, and repay in natural language. | [→](./langchain-agent) |
 | **openai-agents** | Config only | OpenAI Agents SDK | Beginner _(Preview)_ | Use Floe from the OpenAI Agents SDK today via MCP fallback, ahead of the native adapter. | [→](./openai-agents) |
-| **crewai-demo** | Python | CrewAI · `crewai-floe` | Intermediate | Per-agent budgets with a hard, server-side ceiling: a rigged loop halts at $1, and a procurement crew enforces allowlists and per-role caps. | [→](./crewai-demo) |
+| **crewai-demo** | Python | CrewAI · `crewai-floe` | Intermediate | Per-agent budgets with a hard, server-side ceiling: a rigged loop halts at $1, and a procurement crew enforces allowlists and per-role caps. _(Installs `crewai-floe` from a git branch until it lands on PyPI — see its README.)_ | [→](./crewai-demo) |
 | **vapi-voice-agent** | TypeScript | Vapi · GPT-4o · ElevenLabs · Exa | Intermediate | An outbound voice concierge that pays for live web search through Floe, tapers as it nears its budget, and audibly hard-stops at the cap. | [→](./vapi-voice-agent) |
-| **yield-optimizer** | TypeScript | Coinbase AgentKit | Intermediate | A treasury agent that borrows USDC against WETH, deploys to a yield strategy, monitors loan health, and repays. On-chain / self-custody. | [→](./yield-optimizer) |
+| **yield-optimizer** | TypeScript | Coinbase AgentKit | Intermediate _(Preview)_ | A treasury agent that borrows USDC against WETH, deploys to a yield strategy, monitors loan health, and repays. On-chain / self-custody. | [→](./yield-optimizer) |
 | **vapi-venice-voice-agent** | TypeScript | Vapi · Venice · ElevenLabs · Exa | Advanced | Same voice concierge, but the **LLM inference itself** runs on Venice through Floe — model *and* tools metered on one key, with an audible hard-stop. | [→](./vapi-venice-voice-agent) |
 | **hydra-memory-agent** | TypeScript | Vapi · Venice · HydraDB | Advanced | A voice concierge with **persistent memory** — it stores caller facts in HydraDB and recalls them, so a later call greets you by name. Brain (Venice) + memory (HydraDB) on **one Floe key**, no vendor keys. | [→](./hydra-memory-agent) |
-| **flash-arb-bot** | TypeScript | Coinbase AgentKit | Advanced | On-chain flash-loan arbitrage across Aerodrome pools — a crypto-native / MEV strategy on Floe's lending surface. | [→](./flash-arb-bot) |
+| **flash-arb-bot** | TypeScript | Coinbase AgentKit | Advanced _(Preview)_ | On-chain flash-loan arbitrage across Aerodrome pools — a crypto-native / MEV strategy on Floe's lending surface. | [→](./flash-arb-bot) |
 
 > **Difficulty** is a rough guide: _Beginner_ = a key and a few minutes;
 > _Intermediate_ = a webhook, a framework, or a running server;
 > _Advanced_ = self-custody / on-chain setup (a funded wallet, an RPC endpoint).
-> Some on-chain examples exercise Floe's lending surface — check each README for
-> its current run status.
+> **_(Preview)_** marks examples whose script is a printed walkthrough of the
+> flow — full docs and env setup, but not yet runnable against the live API.
+> Runnable versions are on the way; each README says exactly what runs today.
 
 ## Demos
 
@@ -91,21 +92,28 @@ See [`hydra-memory-agent`](./hydra-memory-agent).
 
 ## Quickstart
 
+Watch the setup end to end (~90s each) — key, funding, and a first metered call:
+
+<p>
+  <a href="https://www.loom.com/share/5e2ff8743ba7435dba1c5429590ec223"><img src="https://cdn.loom.com/sessions/thumbnails/5e2ff8743ba7435dba1c5429590ec223-0fbcb4503a9852fe.gif" alt="Get started on Floe — OpenAI (~90s)" width="360"></a>
+  <a href="https://www.loom.com/share/0e9c894131394fe78524608edd6e59c1"><img src="https://cdn.loom.com/sessions/thumbnails/0e9c894131394fe78524608edd6e59c1-678c7793ced6dc29.gif" alt="Get started on Floe — Anthropic (~90s)" width="360"></a>
+</p>
+
 Every example is standalone. Pick one, `cd` into it, and follow its README.
 
 ```bash
 git clone https://github.com/Floe-Labs/floe-cookbook.git
 cd floe-cookbook
 
-# Pick an example — e.g. the minimal x402 payment client
-cd x402-client
+# Pick an example — e.g. metered LLM calls through Floe's billed proxy
+cd metered-llm
 cp .env.example .env          # fill in FLOE_API_KEY (and any keys the README lists)
 
 # TypeScript examples
-npm install && npx tsx index.ts
+npm install && npm start
 
-# Python examples (e.g. langchain-agent)
-pip install -r requirements.txt && python agent.py
+# Python examples
+pip install -r requirements.txt && python main.py
 ```
 
 You'll need a Floe API key — [get one at the dashboard](https://dev-dashboard.floelabs.xyz)

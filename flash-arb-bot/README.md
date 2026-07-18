@@ -1,8 +1,12 @@
-# Flash Arb Bot
+# Flash Arb Bot (Preview)
 
 Monitors price differences between Aerodrome pools and executes flash-loan
 arbitrage when profitable. A crypto-native / MEV strategy on Floe's lending
 surface. On-chain / self-custody.
+
+> **Status: `Preview`.** `index.ts` prints a walkthrough of the fee check →
+> receiver deploy → scan → execute flow with the exact action calls — it does
+> not execute them on-chain yet. A runnable version is on the way.
 
 > This example is on-chain and signs from a private key. It is for crypto-native
 > use cases — see the [Quickstart](https://floe-labs.gitbook.io/docs/quickstart)
@@ -36,8 +40,9 @@ npm install
 npx tsx index.ts
 ```
 
-The bot checks the flash-loan fee, deploys the receiver contract once, scans for
-opportunities, and executes profitable trades.
+The script prints a walkthrough of the bot's loop — the flash-loan fee check,
+the one-time receiver deploy, opportunity scanning, and execution — without
+executing on-chain yet (see the status note above).
 
 ## Key actions used
 

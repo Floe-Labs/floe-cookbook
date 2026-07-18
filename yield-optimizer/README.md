@@ -1,7 +1,12 @@
-# Yield Optimizer
+# Yield Optimizer (Preview)
 
 A treasury agent that borrows USDC against WETH collateral, deploys it to a yield
 strategy, and repays before maturity. On-chain / self-custody.
+
+> **Status: `Preview`.** `index.ts` sets up the wallet client, then prints a
+> walkthrough of the borrow → deploy → monitor → repay flow with the exact
+> action calls — it does not execute them on-chain yet. A runnable version is
+> on the way.
 
 > This example uses Floe's on-chain lending surface and signs from a private key.
 > For the walletless, card-funded path, see the
@@ -35,8 +40,9 @@ npm install
 npx tsx index.ts
 ```
 
-The script checks lending rates, borrows, deploys to your yield strategy,
-monitors health, then repays.
+The script prints a walkthrough of the full loop — checking lending rates,
+borrowing, deploying to your yield strategy, monitoring health, and repaying —
+without executing on-chain yet (see the status note above).
 
 ## Key actions used
 

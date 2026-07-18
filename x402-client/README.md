@@ -1,8 +1,14 @@
-# x402 Client
+# x402 Client (Preview)
 
 Delegate credit to the Floe facilitator, then call x402 APIs without managing
 payments. Gas-free. This is the minimal payment example — your agent never holds
 or transfers USDC directly; Floe handles all payment mechanics behind the scenes.
+
+> **Status: `Preview`.** `index.ts` is a printed walkthrough of the flow below —
+> it shows the exact calls (`grant_credit_delegation`, `x402_fetch`,
+> `x402_get_balance`) but does not contact the live Floe API yet. A runnable
+> version is on the way. For a fully runnable payment example today, see
+> [`../metered-llm`](../metered-llm).
 
 ## What it demonstrates
 
@@ -32,8 +38,10 @@ npm install
 npx tsx index.ts
 ```
 
-The script delegates credit once, calls an x402 API with payment handled
-automatically, then prints the remaining balance.
+The script prints a step-by-step walkthrough of the flow: the one-time credit
+delegation, an x402 API call with payment handled automatically, and the
+remaining-balance read. It does not contact the live API yet (see the status
+note above).
 
 ## Key actions used
 

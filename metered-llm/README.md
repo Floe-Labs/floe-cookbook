@@ -8,6 +8,10 @@ your provider key never leaves your request.
 This is the framework-agnostic version: just the standard `openai` SDK pointed at
 Floe. (For the budget-aware "$1-not-$414 loop kill", see [`../crewai-demo`](../crewai-demo).)
 
+> **Watch the setup** (~90s each):
+> [OpenAI](https://www.loom.com/share/5e2ff8743ba7435dba1c5429590ec223) ·
+> [Anthropic](https://www.loom.com/share/0e9c894131394fe78524608edd6e59c1)
+
 ## What it demonstrates
 
 - Fronting any priced OpenAI/Anthropic model through a single billed endpoint.
