@@ -43,6 +43,7 @@ agents: rail-agnostic, one key, one ledger, no per-vendor accounts, no crypto.
 - **Voice agents** that pay per-lookup for live web search and stop cleanly at a budget — [`vapi-voice-agent`](./vapi-voice-agent), [`vapi-venice-voice-agent`](./vapi-venice-voice-agent) — or that **remember callers across calls** via HydraDB — [`hydra-memory-agent`](./hydra-memory-agent)
 - **Budget-capped multi-agent crews** where a runaway loop dies at $1, not $414 — [`crewai-demo`](./crewai-demo)
 - **Metered LLM access** — any OpenAI/Anthropic model behind one billed endpoint with a server-side cap — [`metered-llm`](./metered-llm)
+- **Add Floe to an agent you already have** — route an existing STT→LLM→TTS agent's spend through Floe's keyless gateway with a two-line diff, no provider key — [`drop-in-existing-agent`](./drop-in-existing-agent)
 - **Conversational agents** that pay x402 APIs from natural language — [`langchain-agent`](./langchain-agent)
 - **Zero-install access from Claude Desktop / Cursor** via hosted MCP — [`mcp-demo`](./mcp-demo)
 - **On-chain / self-custody agents** — treasury, yield, and flash-loan strategies — [`yield-optimizer`](./yield-optimizer), [`flash-arb-bot`](./flash-arb-bot)
@@ -52,6 +53,7 @@ agents: rail-agnostic, one key, one ledger, no per-vendor accounts, no crypto.
 | Example | Language | Framework / Stack | Difficulty | What it shows | Link |
 |---|---|---|---|---|---|
 | **metered-llm** | TypeScript · Python | OpenAI SDK (framework-agnostic) | Beginner | Route any OpenAI/Anthropic model through Floe's metered proxy — per-token billing on one key, capped server-side, your provider key never stored. | [→](./metered-llm) |
+| **drop-in-existing-agent** | TypeScript · Python | Standard `openai` SDK (framework-agnostic) | Beginner | Add Floe to an agent you already have — swap `baseURL`/`apiKey`/model to route an existing STT→LLM→TTS agent's LLM leg through Floe's keyless gateway, no provider key. | [→](./drop-in-existing-agent) |
 | **x402-client** | TypeScript | Coinbase AgentKit | Beginner _(Preview)_ | The minimal payment example: delegate credit to the Floe facilitator, then call any x402 API with automatic, gas-free payment. | [→](./x402-client) |
 | **mcp-demo** | Config only | Claude Desktop / Cursor (MCP) | Beginner | Connect Claude Desktop or Cursor to Floe's hosted MCP server in one line — read markets, intents, and loans with zero install. | [→](./mcp-demo) |
 | **langchain-agent** | Python | LangChain | Beginner _(Preview)_ | A LangChain agent that exposes Floe actions as tools — check markets, borrow, monitor, and repay in natural language. | [→](./langchain-agent) |
