@@ -1,7 +1,7 @@
 # drop-in-existing-agent
 
 **Already have an STT→LLM→TTS agent? Route its spend through Floe by changing
-two lines.** No provider account, no vendor keys — point your existing `openai`
+three values.** No provider account, no vendor keys — point your existing `openai`
 client at Floe's **keyless** gateway and Floe holds the upstream credential and
 bills every call to one key.
 
@@ -11,11 +11,11 @@ provider key (BYOK) instead, see [`../metered-llm`](../metered-llm).
 
 ## What it demonstrates
 
-- The two-line swap that routes an existing agent's LLM leg through Floe.
+- The three-value swap that routes an existing agent's LLM leg through Floe.
 - The **keyless** path: no OpenAI/Anthropic key anywhere — Floe holds the upstream credential.
 - Per-call cost returned on a response header, billed to one Floe key.
 
-## The two-line swap (BEFORE → AFTER)
+## The swap (BEFORE → AFTER)
 
 You already have a client like this, pointed straight at OpenAI with your own key:
 
@@ -47,6 +47,11 @@ const res = await client.chat.completions.create({
 
 No `OPENAI_API_KEY`. Floe holds the upstream credential and bills each call to
 your Floe key.
+
+> **Billing tip:** the runnable code sets `maxRetries: 0` (`max_retries=0` in
+> Python). The keyless gateway bills per completed call and doesn't dedupe
+> retries, so the SDK's default auto-retry can double-charge on a dropped
+> response. Disable it, or add idempotency at a higher layer.
 
 ## Stack
 

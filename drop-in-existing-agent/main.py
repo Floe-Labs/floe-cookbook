@@ -3,8 +3,8 @@ Add Floe to an agent you already have — keyless LLM gateway (Python).
 
 You already have an STT→LLM→TTS agent whose LLM leg uses the standard `openai`
 SDK pointed at OpenAI with your own key. To route that spend through Floe, change
-TWO things: base_url and api_key (and the model id namespace). No provider key —
-Floe holds the upstream credential and bills each call to your one Floe key.
+THREE values: base_url, api_key, and the model id. No provider key — Floe holds
+the upstream credential and bills each call to your one Floe key.
 
 Run:  pip install -r requirements.txt && python main.py
 Env:  FLOE_API_KEY
@@ -25,13 +25,14 @@ def require_env(name: str) -> str:
     return v
 
 
-# This is the entire change vs your existing OpenAI client:
+# The routing change vs your existing OpenAI client:
 #   base_url → Floe's keyless gateway   (was: default OpenAI)
 #   api_key  → your Floe key floe_<hex> (was: your OPENAI_API_KEY)
 # No provider key anywhere — Floe holds the upstream credential.
 client = OpenAI(
     base_url="https://credit-api.floelabs.xyz/v1",  # client appends /chat/completions
     api_key=require_env("FLOE_API_KEY"),            # floe_<hex> — Floe auth + billing
+    max_retries=0,  # billable gateway: bills per call, no retry dedupe — default auto-retry could double-charge
 )
 
 # Floe-namespaced model id (your existing "gpt-4o" becomes "openai/gpt-4o").

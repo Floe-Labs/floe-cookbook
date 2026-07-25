@@ -43,7 +43,7 @@ agents: rail-agnostic, one key, one ledger, no per-vendor accounts, no crypto.
 - **Voice agents** that pay per-lookup for live web search and stop cleanly at a budget — [`vapi-voice-agent`](./vapi-voice-agent), [`vapi-venice-voice-agent`](./vapi-venice-voice-agent) — or that **remember callers across calls** via HydraDB — [`hydra-memory-agent`](./hydra-memory-agent)
 - **Budget-capped multi-agent crews** where a runaway loop dies at $1, not $414 — [`crewai-demo`](./crewai-demo)
 - **Metered LLM access** — any OpenAI/Anthropic model behind one billed endpoint with a server-side cap — [`metered-llm`](./metered-llm)
-- **Add Floe to an agent you already have** — route an existing STT→LLM→TTS agent's spend through Floe's keyless gateway with a two-line diff, no provider key — [`drop-in-existing-agent`](./drop-in-existing-agent)
+- **Add Floe to an agent you already have** — route an existing STT→LLM→TTS agent's spend through Floe's keyless gateway by swapping three values (`baseURL`/`apiKey`/model), no provider key — [`drop-in-existing-agent`](./drop-in-existing-agent)
 - **Conversational agents** that pay x402 APIs from natural language — [`langchain-agent`](./langchain-agent)
 - **Zero-install access from Claude Desktop / Cursor** via hosted MCP — [`mcp-demo`](./mcp-demo)
 - **On-chain / self-custody agents** — treasury, yield, and flash-loan strategies — [`yield-optimizer`](./yield-optimizer), [`flash-arb-bot`](./flash-arb-bot)
