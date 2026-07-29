@@ -1,6 +1,6 @@
 # Floe Phone sales agent
 
-An outbound **voice sales agent** that prospects for Floe — built **on Floe**. It places a real phone call, pitches Floe, qualifies the prospect, and books a demo. The twist: **every leg of the call — telephony, speech-to-text, the LLM, text-to-speech, and any web lookup — meters on one Floe key, under one budget.** It's Floe selling Floe, paid for by Floe.
+An outbound **voice sales agent** that prospects for Floe — built **on Floe**. It places a real phone call, pitches Floe, qualifies the prospect, and captures a demo request (email + time — you wire your own scheduler/CRM to confirm it). The twist: **every leg of the call — telephony, speech-to-text, the LLM, text-to-speech, and any web lookup — meters on one Floe key, under one budget.** It's Floe selling Floe, paid for by Floe.
 
 ```
 campaign.ts ──POST /v1/calls (agent key, campaign cap)──► Floe Phone
@@ -19,7 +19,7 @@ A voice turn spends across ~5 vendors in real time. Here they all land on **one 
 
 ## What's live vs. what you add
 - **Live on Floe (used here):** native phone number + outbound `POST /v1/calls`, webhook voice mode, barge-in, keyless LLM, x402 tool payments, per-call + campaign spend caps that cut a call off mid-flight.
-- **Out of scope for this example (do it before dialing cold):** outbound-sales **compliance** — DNC scrubbing, prior consent, recording disclosure, calling hours, opt-out. Use **warm / opt-in** leads only. Warm **transfer to a human** is also not wired (the agent books a demo instead).
+- **Out of scope for this example (do it before dialing cold):** outbound-sales **compliance** — DNC scrubbing, prior consent, recording disclosure, calling hours, opt-out. Use **warm / opt-in** leads only. Warm **transfer to a human** is also not wired (the agent captures a demo request instead).
 
 ## Prerequisites
 - A Floe account + agent: **developer key** (`floe_live_…`) and **agent key** (`floe_…`), and the agent's numeric id — all from [dev-dashboard.floelabs.xyz](https://dev-dashboard.floelabs.xyz). Fund the agent (a phone number is $2/mo + usage).
@@ -41,7 +41,7 @@ npx tsx call.ts +1XXXXXXXXXX  # the agent calls you — answer it
 # or dial a list (warm/opt-in only):
 npx tsx campaign.ts
 
-npx tsx report.ts             # dispositions + cost per booked demo, from the Floe ledger
+npx tsx report.ts             # dispositions + cost per demo request, from the Floe ledger
 ```
 
 ## How spend stays on one key
@@ -54,7 +54,7 @@ npx tsx report.ts             # dispositions + cost per booked demo, from the Fl
 | `server.ts` | the webhook sales brain: LLM + tools per turn, logs transcript + disposition |
 | `campaign.ts` | dial a lead list (`leads.json`, else `leads.example.json`) |
 | `call.ts` | single "the agent calls you" test |
-| `report.ts` | dispositions + cost-per-booked-demo |
+| `report.ts` | dispositions + cost-per-demo-request |
 | `floe.ts` | thin Floe client (keyless chat, x402 proxy, phone, spend-limit) |
 | `store.ts` | tiny JSON store for outcomes — swap for your CRM |
 

@@ -6,12 +6,13 @@
  * transcript + disposition ourselves (Floe Phone doesn't yet push a structured
  * call-end/disposition event — the app routes around that here).
  */
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, renameSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 export type Disposition =
   | "in_progress"
-  | "booked_demo"
+  | "demo_requested" // prospect agreed; we captured email/time. NOT a confirmed booking.
+  | "booked_demo" // reserved: set only when a real scheduler/CRM confirms (not by this reference).
   | "interested"
   | "not_interested"
   | "callback"
@@ -32,16 +33,22 @@ export interface CallRecord {
 const FILE = fileURLToPath(new URL("./calls.json", import.meta.url));
 
 function load(): Record<string, CallRecord> {
-  if (!existsSync(FILE)) return {};
+  if (!existsSync(FILE)) return {}; // genuinely empty DB — the only case that yields {}
+  // Surface a parse failure instead of returning {} — otherwise the next save()
+  // would overwrite a merely-corrupted file and erase every call record.
   try {
     return JSON.parse(readFileSync(FILE, "utf-8"));
-  } catch {
-    return {};
+  } catch (e) {
+    throw new Error(`calls.json is unreadable (${(e as Error).message}). Refusing to continue and overwrite it — inspect/back it up first.`);
   }
 }
 
+// Atomic write: serialize to a temp file, then rename over the target. A partial
+// write / crash leaves the old file intact rather than a truncated one.
 function save(all: Record<string, CallRecord>): void {
-  writeFileSync(FILE, JSON.stringify(all, null, 2));
+  const tmp = `${FILE}.tmp`;
+  writeFileSync(tmp, JSON.stringify(all, null, 2));
+  renameSync(tmp, FILE);
 }
 
 export function getCall(callId: string): CallRecord {
@@ -60,6 +67,20 @@ export function updateCall(callId: string, patch: Partial<CallRecord>): CallReco
   all[callId] = { ...rec, ...patch, transcript: patch.transcript ?? rec.transcript, updatedAt: new Date().toISOString() };
   save(all);
   return all[callId];
+}
+
+// A booking outcome must survive a later tool call in the same turn — the model
+// can call book_demo and then mark_disposition, and the naive last-write-wins
+// would erase the booking. Compliance opt-out is the one signal allowed to
+// override a booking.
+const BOOKING_TERMINAL: Disposition[] = ["demo_requested", "booked_demo"];
+
+export function applyDisposition(callId: string, next: Disposition, patch: Partial<CallRecord> = {}): CallRecord {
+  const rec = getCall(callId);
+  if (next !== "opt_out" && next !== rec.disposition && BOOKING_TERMINAL.includes(rec.disposition)) {
+    return rec; // preserve the booking; ignore the downgrade
+  }
+  return updateCall(callId, { ...patch, disposition: next });
 }
 
 export function appendTurn(callId: string, role: "caller" | "agent", text: string): void {

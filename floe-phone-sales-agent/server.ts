@@ -13,7 +13,7 @@
 import Fastify from "fastify";
 import "dotenv/config";
 import { keylessChat, proxyFetch, MODEL, type ChatMessage, type BudgetAdvisory } from "./floe.js";
-import { getCall, appendTurn, updateCall, type Disposition } from "./store.js";
+import { appendTurn, applyDisposition, type Disposition } from "./store.js";
 
 const PORT = Number(process.env.PORT || 3000);
 const EXA_URL = process.env.EXA_URL || "https://api.exa.ai/search";
@@ -60,7 +60,7 @@ const TOOLS = [
     type: "function",
     function: {
       name: "book_demo",
-      description: "Book a 20-minute Floe demo for the prospect. Call this the moment they agree.",
+      description: "Capture a 20-minute Floe demo request (email + a suggested time) the moment the prospect agrees. We email a calendar invite to confirm — don't tell them it's already booked.",
       parameters: {
         type: "object",
         properties: {
@@ -121,14 +121,18 @@ async function runTool(
     return { content: summary, advisory: r.advisory, costUsd: r.costUsd };
   }
   if (name === "book_demo") {
-    // Local CRM action — no paid API. In production, hit your scheduler here.
+    // No scheduler here — we record a demo REQUEST, not a confirmed booking.
+    // In production, call your scheduler/CRM and only set booked_demo after it
+    // confirms; until then the honest state is demo_requested.
     const slot = args.suggestedTime || "a time we'll confirm by email";
-    updateCall(callId, { disposition: "booked_demo", bookedSlot: `${args.email} · ${slot}` });
-    return { content: `Demo booked for ${args.email} (${slot}). A calendar invite will follow.`, advisory: null, costUsd: null };
+    applyDisposition(callId, "demo_requested", { bookedSlot: `${args.email} · ${slot}` });
+    return { content: `Demo request captured for ${args.email} (${slot}). We'll email a calendar invite to confirm.`, advisory: null, costUsd: null };
   }
   if (name === "mark_disposition") {
     const map: Record<string, Disposition> = { interested: "interested", not_interested: "not_interested", callback: "callback", opt_out: "opt_out" };
-    updateCall(callId, { disposition: map[args.status] ?? "in_progress" });
+    // applyDisposition won't let this clobber a demo_requested/booked_demo outcome
+    // (except a compliance opt_out, which always wins).
+    applyDisposition(callId, map[args.status] ?? "in_progress");
     return { content: `Noted: ${args.status}.`, advisory: null, costUsd: null };
   }
   return { content: `Unknown tool ${name}.`, advisory: null, costUsd: null };

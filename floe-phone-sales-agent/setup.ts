@@ -65,7 +65,7 @@ async function main() {
   console.log("   1. npx tsx server.ts          # keep ngrok pointed at it");
   console.log("   2. npx tsx call.ts +1XXXXXXXXXX   # the agent calls you (a test)");
   console.log("   3. npx tsx campaign.ts        # dial your opt-in lead list");
-  console.log("   4. npx tsx report.ts          # dispositions + cost per booked demo");
+  console.log("   4. npx tsx report.ts          # dispositions + cost per demo request");
   console.log(`\n   Save this for reporting →  FLOE_NUMBER_ID=${num.id}`);
 }
 

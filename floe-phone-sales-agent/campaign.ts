@@ -25,6 +25,7 @@ const src = existsSync(new URL("./leads.json", import.meta.url))
 const leads: Lead[] = JSON.parse(readFileSync(src, "utf-8"));
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const DIAL_INTERVAL_MS = Number(process.env.DIAL_INTERVAL_MS) || 1500;
 
 async function main() {
   console.log(`📞 Campaign — ${leads.length} leads (${src.pathname.split("/").pop()})`);
@@ -39,7 +40,13 @@ async function main() {
     } catch (e) {
       console.error(`   ✗ ${lead.phone}: ${(e as Error).message}`);
     }
-    await sleep(1500); // one at a time, gently — the server + budget do the real work
+    // Pace *dialing* (one every DIAL_INTERVAL_MS) so we don't hammer the carrier.
+    // NOTE: this does NOT serialize active calls — each conversation runs for
+    // minutes on Floe's side and overlaps the next dial. Floe exposes no public
+    // call-status/end signal to wait on, so the campaign spend cap (setup.ts) is
+    // what actually bounds concurrent spend. A production dialer would cap active
+    // concurrency off call-status webhooks.
+    await sleep(DIAL_INTERVAL_MS);
   }
   console.log(`\n${placed}/${leads.length} calls placed. Transcripts + outcomes stream into calls.json as they run.`);
   console.log("Run  npx tsx report.ts  when they're done.");
