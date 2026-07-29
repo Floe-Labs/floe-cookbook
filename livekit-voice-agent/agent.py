@@ -21,6 +21,7 @@ Run:
   python agent.py dev     # LiveKit Agents dev mode
 """
 import os
+import sys
 from dotenv import load_dotenv
 from livekit import agents
 from livekit.agents import Agent, AgentSession
@@ -28,8 +29,22 @@ from livekit.plugins import openai, deepgram, silero
 
 load_dotenv()
 
+
+def require_env() -> None:
+    """Fail fast with an actionable message if config is missing."""
+    # FLOE_API_KEY: LLM + TTS billing. DEEPGRAM_API_KEY: the BYO STT leg.
+    # LIVEKIT_*: how the worker reaches your LiveKit server.
+    required = ["FLOE_API_KEY", "DEEPGRAM_API_KEY", "LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET"]
+    missing = [k for k in required if not os.environ.get(k)]
+    if missing:
+        print(f"Missing env: {', '.join(missing)} — copy .env.example to .env and fill it in.", file=sys.stderr)
+        sys.exit(1)
+
+
+require_env()
+
 FLOE_BASE_URL = os.environ.get("FLOE_BASE_URL", "https://credit-api.floelabs.xyz/v1")
-FLOE_API_KEY = os.environ["FLOE_API_KEY"]  # floe_… agent key
+FLOE_API_KEY = os.environ["FLOE_API_KEY"]  # floe_… agent key (validated above)
 FLOE_LLM_MODEL = os.environ.get("FLOE_LLM_MODEL", "openai/gpt-4o-mini")   # any Floe Inference model
 FLOE_TTS_MODEL = os.environ.get("FLOE_TTS_MODEL", "openai/tts-1")
 FLOE_TTS_VOICE = os.environ.get("FLOE_TTS_VOICE", "alloy")
@@ -43,6 +58,12 @@ class Assistant(Agent):
                 "this is a live phone-style conversation, not an essay."
             )
         )
+
+
+def prewarm(proc: agents.JobProcess) -> None:
+    # Load Silero VAD once per worker process and reuse it across every job —
+    # the model init is synchronous, so doing it per-session adds startup latency.
+    proc.userdata["vad"] = silero.VAD.load()
 
 
 async def entrypoint(ctx: agents.JobContext):
@@ -60,8 +81,8 @@ async def entrypoint(ctx: agents.JobContext):
         # TTS — on Floe. Same trick: Floe's keyless /v1/audio/speech is OpenAI-compatible.
         tts=openai.TTS(model=FLOE_TTS_MODEL, voice=FLOE_TTS_VOICE, base_url=FLOE_BASE_URL, api_key=FLOE_API_KEY),
 
-        # Voice-activity detection (endpointing) runs locally.
-        vad=silero.VAD.load(),
+        # Voice-activity detection (endpointing) — prewarmed once per worker.
+        vad=ctx.proc.userdata["vad"],
     )
 
     await session.start(agent=Assistant(), room=ctx.room)
@@ -69,4 +90,4 @@ async def entrypoint(ctx: agents.JobContext):
 
 
 if __name__ == "__main__":
-    agents.cli.run_app(agents.WorkerOptions(entrypoint_fnc=entrypoint))
+    agents.cli.run_app(agents.WorkerOptions(entrypoint_fnc=entrypoint, prewarm_fnc=prewarm))
