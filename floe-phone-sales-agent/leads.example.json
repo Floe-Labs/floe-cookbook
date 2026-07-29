@@ -1,0 +1,16 @@
+[
+  {
+    "id": "lead-001",
+    "name": "Alex Rivera",
+    "company": "Waveline",
+    "phone": "+15551230001",
+    "email": "alex@waveline.example"
+  },
+  {
+    "id": "lead-002",
+    "name": "Priya Nair",
+    "company": "Dialtree",
+    "phone": "+15551230002",
+    "email": "priya@dialtree.example"
+  }
+]
