@@ -22,6 +22,7 @@ for (const [k, v] of Object.entries({
   FLOE_API_KEY: process.env.FLOE_API_KEY,
   FLOE_AGENT_ID: AGENT_ID,
   SERVER_URL,
+  WEBHOOK_SECRET: process.env.WEBHOOK_SECRET,
 })) {
   if (!v) { console.error(`Set ${k} in .env`); process.exit(1); }
 }
@@ -55,7 +56,7 @@ async function main() {
   console.log(`   ✅ ${num.phoneNumber} (id ${num.id})\n`);
 
   // 3) Webhook voice mode → this server.
-  const webhookUrl = `${SERVER_URL!.replace(/\/$/, "")}/floe/voice`;
+  const webhookUrl = `${SERVER_URL!.replace(/\/$/, "")}/floe/voice/${process.env.WEBHOOK_SECRET}`;
   console.log("🔌 Switching voice to webhook mode (this server is the brain)...");
   await setVoiceConfig(AGENT_ID!, { voiceMode: "webhook", webhookUrl, beginMessage: BEGIN_MESSAGE });
   console.log(`   ✅ webhook → ${webhookUrl}\n`);

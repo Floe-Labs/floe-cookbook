@@ -125,6 +125,7 @@ export async function ensureNumber(agentId: string, areaCode?: string): Promise<
     const list = await fetch(`${BASE}/v1/developer/agents/${agentId}/numbers`, {
       headers: { Authorization: `Bearer ${DEV_KEY}` },
     });
+    if (!list.ok) throw new Error(`ensureNumber list ${list.status}: ${(await list.text()).slice(0, 200)}`);
     const active = (await list.json()).numbers?.find((n: any) => n.status === "active");
     if (active) return active;
   }

@@ -19,9 +19,12 @@ const PORT = Number(process.env.PORT || 3000);
 const EXA_URL = process.env.EXA_URL || "https://api.exa.ai/search";
 const MAX_TOOL_ROUNDS = 4;
 
-if (!process.env.FLOE_API_KEY) {
-  console.error("Set FLOE_API_KEY (agent key) in .env");
-  process.exit(1);
+// WEBHOOK_SECRET authenticates Floe Phone's webhook to this server. Floe Phone
+// sends no auth header, so the secret lives in the webhook URL path (setup.ts
+// bakes it in as /floe/voice/<secret>) and we reject anything that doesn't match.
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+for (const k of ["FLOE_API_KEY", "WEBHOOK_SECRET"]) {
+  if (!process.env[k]) { console.error(`Set ${k} in .env`); process.exit(1); }
 }
 
 // What the agent is selling: Floe itself. Prospecting for the product it runs on.
@@ -108,6 +111,7 @@ async function runTool(
       callId,
     );
     if (r.blocked) return { content: "PAYMENT_BLOCKED: budget/policy limit reached — do not retry paid lookups.", advisory: r.advisory, costUsd: r.costUsd };
+    if (!r.ok) return { content: `research_prospect failed (${r.status}) — skip it and continue the call.`, advisory: r.advisory, costUsd: r.costUsd };
     // Summarize Exa results into a compact string for the model.
     let summary = r.body.slice(0, 600);
     try {
@@ -142,12 +146,18 @@ function mapHistory(recent: any): ChatMessage[] {
 const app = Fastify({ logger: false });
 
 // Floe Phone posts each finished caller utterance here (webhook voice mode).
-app.post("/floe/voice", async (request, reply) => {
+app.post("/floe/voice/:token", async (request, reply) => {
+  if ((request.params as any).token !== WEBHOOK_SECRET) {
+    return reply.status(401).send({ error: "unauthorized" });
+  }
   const ev = request.body as any;
   if (ev?.type !== "agent.message") {
     return reply.status(200).send(""); // ignore non-message events
   }
-  const callId = String(ev.callId ?? "unknown");
+  // No callId → reject. Defaulting to a literal would merge unrelated calls into
+  // one task budget and one calls.json record.
+  if (!ev.callId) return reply.status(400).send({ error: "missing callId" });
+  const callId = String(ev.callId);
   const callerText = String(ev.text ?? "");
   appendTurn(callId, "caller", callerText);
 
@@ -202,6 +212,6 @@ app.get("/health", async () => ({ ok: true, model: MODEL }));
 
 app.listen({ port: PORT, host: "0.0.0.0" }).then(() => {
   console.log(`🎙️  Floe Phone sales brain listening on :${PORT}  (model: ${MODEL})`);
-  console.log(`   Point your Floe Phone webhookUrl at  <public-https>/floe/voice`);
+  console.log(`   Point your Floe Phone webhookUrl at  <public-https>/floe/voice/<WEBHOOK_SECRET>  (setup.ts does this)`);
   console.log(`   (run setup.ts to buy a number + set webhook voice mode)`);
 });

@@ -7,6 +7,7 @@
  * call-end/disposition event — the app routes around that here).
  */
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 export type Disposition =
   | "in_progress"
@@ -28,7 +29,7 @@ export interface CallRecord {
   updatedAt: string;
 }
 
-const FILE = new URL("./calls.json", import.meta.url).pathname;
+const FILE = fileURLToPath(new URL("./calls.json", import.meta.url));
 
 function load(): Record<string, CallRecord> {
   if (!existsSync(FILE)) return {};
