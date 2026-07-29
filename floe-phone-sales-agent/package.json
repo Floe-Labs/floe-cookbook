@@ -1,0 +1,24 @@
+{
+  "name": "floe-phone-sales-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Outbound voice sales agent on Floe Phone — telephony, STT, LLM, TTS, and tool calls all metered on one Floe key, one budget.",
+  "type": "module",
+  "scripts": {
+    "setup": "tsx setup.ts",
+    "start": "tsx server.ts",
+    "call": "tsx call.ts",
+    "campaign": "tsx campaign.ts",
+    "report": "tsx report.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "fastify": "^4.28.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.41",
+    "tsx": "^4.20.0",
+    "typescript": "^5.3.0"
+  }
+}
