@@ -20,6 +20,19 @@
 
 ---
 
+## Start building with Floe
+
+One key for your agent's whole vendor bill — LLM, voice, telephony, search, data — metered per call and budget-capped. Let your coding agent set it up, or wire it yourself:
+
+| Path | One line |
+|---|---|
+| **Agent** — Claude Code / Cursor does the setup | paste: `Read https://dev-dashboard.floelabs.xyz/agents.md and set up Floe for this project.` |
+| **Skill** — install the Floe agent skill | `npx skills add floe-labs/agent-skills` |
+| **MCP** — hosted MCP server (65 tools) | `npx -y add-mcp https://mcp.floelabs.xyz/mcp` |
+| **NPM** — the CLI + SDK | `npm i -g floe-agent` |
+
+New accounts get a **$3 Welcome Credit (300 API credits)** — no card. [Set up with your AI tools →](https://floe-labs.gitbook.io/docs/getting-started/setup-with-ai-tools) · [Get a key →](https://dev-dashboard.floelabs.xyz)
+
 ## What is this?
 
 A cookbook of small, self-contained reference agents that show **Floe** in real
@@ -121,6 +134,19 @@ pip install -r requirements.txt && python main.py
 You'll need a Floe API key — [get one at the dashboard](https://dev-dashboard.floelabs.xyz)
 and fund it with a card. No wallet or crypto required for the spend-layer
 examples; the on-chain examples list their extra prerequisites.
+
+## Use Floe from Claude Code
+
+Prefer to drive Floe from your coding agent? The **[`floe` agent skill](https://github.com/Floe-Labs/agent-skills)**
+teaches Claude Code, Cursor, or any Agent Skills client to run the whole vendor stack
+on one Floe key — metered, budget-capped, with the per-call receipt — the same pattern
+these recipes demonstrate.
+
+```bash
+npx skills add floe-labs/agent-skills
+```
+
+Canonical home (issues, releases, contributions): **[Floe-Labs/agent-skills](https://github.com/Floe-Labs/agent-skills)**.
 
 ## Contributing
 
