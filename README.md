@@ -122,6 +122,19 @@ You'll need a Floe API key — [get one at the dashboard](https://dev-dashboard.
 and fund it with a card. No wallet or crypto required for the spend-layer
 examples; the on-chain examples list their extra prerequisites.
 
+## Use Floe from Claude Code
+
+Prefer to drive Floe from your coding agent? The **[`floe` agent skill](https://github.com/Floe-Labs/agent-skills)**
+teaches Claude Code, Cursor, or any Agent Skills client to run the whole vendor stack
+on one Floe key — metered, budget-capped, with the per-call receipt — the same pattern
+these recipes demonstrate.
+
+```bash
+npx skills add floe-labs/agent-skills
+```
+
+Canonical home (issues, releases, contributions): **[Floe-Labs/agent-skills](https://github.com/Floe-Labs/agent-skills)**.
+
 ## Contributing
 
 New recipes are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) and the
