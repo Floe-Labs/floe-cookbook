@@ -167,6 +167,16 @@ export async function placeCall(toNumber: string): Promise<{ callId: string; fro
   return res.json();
 }
 
+// Poll a call's status. `terminal` is true once the call has ended — the dialer
+// waits on it to place one call at a time instead of overlapping conversations.
+export async function getCallStatus(callId: string): Promise<{ callId: string; status: "pending" | "in_progress" | "completed"; terminal: boolean }> {
+  const res = await fetch(`${BASE}/v1/calls/${encodeURIComponent(callId)}`, {
+    headers: { Authorization: `Bearer ${AGENT_KEY}` },
+  });
+  if (!res.ok) throw new Error(`getCallStatus ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  return res.json();
+}
+
 // ── Per-number usage, straight from the Floe ledger (developer key) ──────────
 
 export async function getUsage(agentId: string, numberId: number, days = 30): Promise<any> {

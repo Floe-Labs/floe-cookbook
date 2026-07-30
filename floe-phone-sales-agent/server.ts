@@ -13,7 +13,7 @@
 import Fastify from "fastify";
 import "dotenv/config";
 import { keylessChat, proxyFetch, MODEL, type ChatMessage, type BudgetAdvisory } from "./floe.js";
-import { appendTurn, applyDisposition, type Disposition } from "./store.js";
+import { appendTurn, applyDisposition, findLatestByEmail, type Disposition } from "./store.js";
 
 const PORT = Number(process.env.PORT || 3000);
 const EXA_URL = process.env.EXA_URL || "https://api.exa.ai/search";
@@ -26,6 +26,13 @@ const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 for (const k of ["FLOE_API_KEY", "WEBHOOK_SECRET"]) {
   if (!process.env[k]) { console.error(`Set ${k} in .env`); process.exit(1); }
 }
+
+// Scheduler (optional). book_demo captures a demo REQUEST and hands the prospect
+// this Calendly link; when they actually pick a time, Calendly POSTs invitee.created
+// to /calendly/webhook/<secret> and we promote the record to booked_demo. Without
+// CALENDLY_WEBHOOK_SECRET the confirmation loop is off and calls stay demo_requested.
+const CALENDLY_LINK = process.env.CALENDLY_LINK || "";
+const CALENDLY_WEBHOOK_SECRET = process.env.CALENDLY_WEBHOOK_SECRET;
 
 // What the agent is selling: Floe itself. Prospecting for the product it runs on.
 const SYSTEM_PROMPT = `You are Riley, a friendly, sharp sales rep for **Floe** — the spend layer for AI voice agents. You are on a live phone call with someone who asked to hear about Floe. Your ONE goal this call: qualify them and **book a 20-minute demo**.
@@ -121,12 +128,13 @@ async function runTool(
     return { content: summary, advisory: r.advisory, costUsd: r.costUsd };
   }
   if (name === "book_demo") {
-    // No scheduler here — we record a demo REQUEST, not a confirmed booking.
-    // In production, call your scheduler/CRM and only set booked_demo after it
-    // confirms; until then the honest state is demo_requested.
-    const slot = args.suggestedTime || "a time we'll confirm by email";
-    applyDisposition(callId, "demo_requested", { bookedSlot: `${args.email} · ${slot}` });
-    return { content: `Demo request captured for ${args.email} (${slot}). We'll email a calendar invite to confirm.`, advisory: null, costUsd: null };
+    // Record a demo REQUEST and hand the prospect the Calendly link. It only
+    // becomes booked_demo when Calendly's invitee.created webhook confirms they
+    // actually picked a time (see /calendly/webhook below) — never on our say-so.
+    const slot = args.suggestedTime || "a time that works for you";
+    applyDisposition(callId, "demo_requested", { bookedSlot: `${args.email} · ${slot}`, demoEmail: String(args.email ?? "") });
+    const link = CALENDLY_LINK ? ` We'll send your Calendly link (${CALENDLY_LINK}) to lock it in.` : " We'll email you a link to lock it in.";
+    return { content: `Demo request captured for ${args.email} (${slot}).${link}`, advisory: null, costUsd: null };
   }
   if (name === "mark_disposition") {
     const map: Record<string, Disposition> = { interested: "interested", not_interested: "not_interested", callback: "callback", opt_out: "opt_out" };
@@ -210,6 +218,25 @@ app.post("/floe/voice/:token", async (request, reply) => {
   // lower perceived latency in production; one final chunk is fine for a demo.)
   reply.header("content-type", "application/x-ndjson");
   return reply.send(JSON.stringify({ text: finalText }) + "\n");
+});
+
+// Calendly confirmation. Configure a Calendly webhook subscription for
+// `invitee.created` pointing at  <public-https>/calendly/webhook/<CALENDLY_WEBHOOK_SECRET>.
+// When the prospect actually books, we promote their demo_requested → booked_demo.
+// (Production hardening: also verify Calendly's HMAC signature header.)
+app.post("/calendly/webhook/:secret", async (request, reply) => {
+  if (!CALENDLY_WEBHOOK_SECRET) return reply.status(503).send({ error: "calendly webhook not configured" });
+  if ((request.params as any).secret !== CALENDLY_WEBHOOK_SECRET) return reply.status(401).send({ error: "unauthorized" });
+  const ev = request.body as any;
+  if (ev?.event !== "invitee.created") return reply.status(200).send(""); // ignore other events
+  const email = String(ev?.payload?.email ?? "").trim();
+  if (!email) return reply.status(200).send("");
+  const rec = findLatestByEmail(email, "demo_requested");
+  if (rec) {
+    applyDisposition(rec.callId, "booked_demo");
+    console.log(`📅 Calendly: booked_demo confirmed for ${email} (call ${rec.callId})`);
+  }
+  return reply.status(200).send("");
 });
 
 app.get("/health", async () => ({ ok: true, model: MODEL }));

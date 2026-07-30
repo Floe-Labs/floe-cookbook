@@ -26,6 +26,7 @@ export interface CallRecord {
   disposition: Disposition;
   transcript: { role: "caller" | "agent"; text: string; at: string }[];
   bookedSlot?: string;
+  demoEmail?: string; // the email the prospect gave book_demo; matches the Calendly webhook
   startedAt: string;
   updatedAt: string;
 }
@@ -69,18 +70,30 @@ export function updateCall(callId: string, patch: Partial<CallRecord>): CallReco
   return all[callId];
 }
 
-// A booking outcome must survive a later tool call in the same turn — the model
-// can call book_demo and then mark_disposition, and the naive last-write-wins
-// would erase the booking. Compliance opt-out is the one signal allowed to
-// override a booking.
-const BOOKING_TERMINAL: Disposition[] = ["demo_requested", "booked_demo"];
+// A booking outcome must survive a later tool call — the model can call book_demo
+// then mark_disposition, and naive last-write-wins would erase the booking. Once a
+// booking exists, only a STRONGER booking (demo_requested → booked_demo, e.g. when
+// the Calendly webhook confirms) or a compliance opt_out may replace it; a plain
+// disposition can't clobber it.
+const BOOKING_RANK: Partial<Record<Disposition, number>> = { demo_requested: 1, booked_demo: 2 };
 
 export function applyDisposition(callId: string, next: Disposition, patch: Partial<CallRecord> = {}): CallRecord {
   const rec = getCall(callId);
-  if (next !== "opt_out" && next !== rec.disposition && BOOKING_TERMINAL.includes(rec.disposition)) {
-    return rec; // preserve the booking; ignore the downgrade
+  const curRank = BOOKING_RANK[rec.disposition] ?? 0;
+  const nextRank = BOOKING_RANK[next] ?? 0;
+  if (curRank > 0 && next !== "opt_out" && nextRank < curRank) {
+    return rec; // preserve the (stronger-or-equal) booking; ignore the downgrade
   }
   return updateCall(callId, { ...patch, disposition: next });
+}
+
+// Most-recently-updated call for an email at a given disposition — the Calendly
+// webhook uses this to find which call a booking confirms.
+export function findLatestByEmail(email: string, disposition: Disposition): CallRecord | undefined {
+  const wanted = email.trim().toLowerCase();
+  return allCalls()
+    .filter((c) => c.disposition === disposition && (c.demoEmail ?? "").trim().toLowerCase() === wanted)
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
 }
 
 export function appendTurn(callId: string, role: "caller" | "agent", text: string): void {
