@@ -1,0 +1,22 @@
+{
+  "name": "retell-custom-llm",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Retell custom-LLM WebSocket adapter — every model token metered + pre-call gated through Floe's keyless gateway",
+  "type": "module",
+  "scripts": {
+    "start": "tsx server.ts",
+    "setup": "tsx setup.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "openai": "^4.104.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.41",
+    "@types/ws": "^8.5.10",
+    "tsx": "^4.20.0",
+    "typescript": "^5.3.0"
+  }
+}

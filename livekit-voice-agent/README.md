@@ -4,14 +4,15 @@ A [LiveKit Agents](https://docs.livekit.io/agents/) voice agent whose **LLM and 
 
 ```
 LiveKit room ⇄ agent.py
-   ├─ STT  Deepgram (streaming)      ← BYO key for now  (roadmap: Floe streaming STT)
+   ├─ STT  Deepgram (streaming)      ← on Floe too: streaming STT WebSocket (see below)
    ├─ LLM  Floe keyless inference    ← on Floe  (base_url swap)
    └─ TTS  Floe keyless speech       ← on Floe  (base_url swap)
 ```
 
-## Three legs on Floe today, the fourth coming
+## All four legs can land on Floe
+
 - **LLM** and **TTS** route to `https://credit-api.floelabs.xyz/v1` with your Floe agent key. Both are OpenAI-compatible, so it's a `base_url` + key swap — metered and capped on your Floe balance.
-- **STT** stays on your **own Deepgram key** for now. LiveKit's STT plugin needs a *live streaming* feed (audio in → interim/final transcripts out); Floe's STT today is **batch** (`POST /v1/audio/transcriptions`). A **native Floe streaming-STT surface is on the roadmap** — when it lands, delete `DEEPGRAM_API_KEY` and point the `stt=` line at Floe, and all four legs meter on one key.
+- **STT** no longer needs a BYO key: Floe's **streaming STT WebSocket is live** at `wss://credit-api.floelabs.xyz/v1/audio/transcriptions/stream?model=deepgram/nova-3&encoding=linear16&sample_rate=16000` (Bearer floe_ key; binary PCM in, `{type:'transcript', text, is_final, speech_final}` out, metered per audio-second). The `pipecat-floe` package's `FloeSTTService` wraps it for Pipecat; for LiveKit, point a websocket STT adapter at it. **This example ships the BYO Deepgram line below** — `agent.py` still constructs `deepgram.STT(...)` and needs `DEEPGRAM_API_KEY` to run as-is; swapping in a Floe adapter is the exercise, not the default. Either way the other three legs meter on Floe.
 
 ## Run it
 ```bash
@@ -27,7 +28,7 @@ LiveKit's OpenAI plugin talks to any OpenAI-compatible endpoint, so pointing it 
 ```python
 llm = openai.LLM(model="openai/gpt-4o-mini", base_url=FLOE_BASE_URL, api_key=FLOE_API_KEY)
 tts = openai.TTS(model="openai/tts-1", voice="alloy", base_url=FLOE_BASE_URL, api_key=FLOE_API_KEY)
-stt = deepgram.STT(model="nova-3")   # BYO DEEPGRAM_API_KEY — swap for Floe when streaming STT ships
+stt = deepgram.STT(model="nova-3")   # BYO key variant — or use Floe streaming STT (see README note above)
 ```
 Model ids stay **fully qualified** (`provider/model`) — that's what Floe Inference expects. See [Floe Inference](https://floe-labs.gitbook.io/docs/developers/keyless-inference) and [Add Floe to your existing pipeline](https://floe-labs.gitbook.io/docs/getting-started/integrate-existing-pipeline).
 

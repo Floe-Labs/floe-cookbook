@@ -1,0 +1,21 @@
+{
+  "name": "vapi-custom-llm",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Point Vapi's custom-llm at Floe's keyless gateway — every model token metered + pre-call gated on one Floe key",
+  "type": "module",
+  "scripts": {
+    "setup": "tsx setup.ts",
+    "shim": "tsx shim.ts"
+  },
+  "dependencies": {
+    "@vapi-ai/server-sdk": "^1.2.0",
+    "dotenv": "^16.3.1",
+    "fastify": "^4.28.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.41",
+    "tsx": "^4.20.0",
+    "typescript": "^5.3.0"
+  }
+}
