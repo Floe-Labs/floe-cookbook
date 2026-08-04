@@ -27,7 +27,7 @@ const SHIM_PATH_SECRET = process.env.SHIM_PATH_SECRET;
 const FLOE_CREDIT_API = (process.env.FLOE_CREDIT_API_URL || "https://credit-api.floelabs.xyz").replace(/\/+$/, "");
 const PORT = Number(process.env.PORT || 3111);
 
-if (!FLOE_API_KEY?.startsWith("floe_")) {
+if (!FLOE_API_KEY || !FLOE_API_KEY.startsWith("floe_") || FLOE_API_KEY.startsWith("floe_live_")) {
   console.error("Set FLOE_API_KEY in .env (floe_<hex> agent key)");
   process.exit(1);
 }
@@ -63,16 +63,31 @@ app.post("/llm/:secret/chat/completions", async (req, reply) => {
   const body = req.body as Record<string, unknown>;
   const model = typeof body.model === "string" ? body.model : "openai/gpt-4o-mini";
 
-  const upstream = await fetch(`${FLOE_CREDIT_API}/v1/chat/completions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${FLOE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    // Pass Vapi's OpenAI payload through as-is — the gateway forwards tools/
-    // tool_choice/etc. verbatim and injects usage accounting itself.
-    body: JSON.stringify(body),
-  });
+  // Deadline until headers arrive — a stalled connect must not pin this
+  // handler and its outbound socket forever. Cleared once fetch resolves, so
+  // long SSE streams are never cut mid-flight.
+  const connectAbort = new AbortController();
+  const connectTimer = setTimeout(() => connectAbort.abort(), 15_000);
+  let upstream: Response;
+  try {
+    upstream = await fetch(`${FLOE_CREDIT_API}/v1/chat/completions`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${FLOE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      // Pass Vapi's OpenAI payload through as-is — the gateway forwards tools/
+      // tool_choice/etc. verbatim and injects usage accounting itself.
+      body: JSON.stringify(body),
+      signal: connectAbort.signal,
+    });
+  } catch (err) {
+    const timedOut = connectAbort.signal.aborted;
+    console.error(`[floe] upstream ${timedOut ? "timeout" : "error"}:`, (err as Error).message);
+    return reply.code(timedOut ? 504 : 502).send({ error: timedOut ? "upstream_timeout" : "upstream_unreachable" });
+  } finally {
+    clearTimeout(connectTimer);
+  }
 
   // Budget pressure, logged per turn. Wire tapering here if you want it —
   // the JSON has { tightest: { scope, used_bps, remaining_raw } }.

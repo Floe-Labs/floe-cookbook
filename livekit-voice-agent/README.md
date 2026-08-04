@@ -10,8 +10,9 @@ LiveKit room ⇄ agent.py
 ```
 
 ## All four legs can land on Floe
+
 - **LLM** and **TTS** route to `https://credit-api.floelabs.xyz/v1` with your Floe agent key. Both are OpenAI-compatible, so it's a `base_url` + key swap — metered and capped on your Floe balance.
-- **STT** no longer needs a BYO key: Floe's **streaming STT WebSocket is live** at `wss://credit-api.floelabs.xyz/v1/audio/transcriptions/stream?model=deepgram/nova-3&encoding=linear16&sample_rate=16000` (Bearer floe_ key; binary PCM in, `{type:'transcript', text, is_final, speech_final}` out, metered per audio-second). The `pipecat-floe` package's `FloeSTTService` wraps it for Pipecat; for LiveKit, point a websocket STT adapter at it — or keep the BYO Deepgram line below if you prefer your own key. Either way the other three legs meter on Floe.
+- **STT** no longer needs a BYO key: Floe's **streaming STT WebSocket is live** at `wss://credit-api.floelabs.xyz/v1/audio/transcriptions/stream?model=deepgram/nova-3&encoding=linear16&sample_rate=16000` (Bearer floe_ key; binary PCM in, `{type:'transcript', text, is_final, speech_final}` out, metered per audio-second). The `pipecat-floe` package's `FloeSTTService` wraps it for Pipecat; for LiveKit, point a websocket STT adapter at it. **This example ships the BYO Deepgram line below** — `agent.py` still constructs `deepgram.STT(...)` and needs `DEEPGRAM_API_KEY` to run as-is; swapping in a Floe adapter is the exercise, not the default. Either way the other three legs meter on Floe.
 
 ## Run it
 ```bash

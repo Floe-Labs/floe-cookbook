@@ -32,6 +32,19 @@ const FLOE_API_KEY = process.env.FLOE_API_KEY;
 const FLOE_MODEL = process.env.FLOE_MODEL || "openai/gpt-4o-mini";
 const FLOE_SPEND_LIMIT_RAW = process.env.FLOE_SPEND_LIMIT_RAW || "100000";
 const FLOE_CREDIT_API = (process.env.FLOE_CREDIT_API_URL || "https://credit-api.floelabs.xyz").replace(/\/+$/, "");
+const SERVER_URL = (process.env.SERVER_URL || "").replace(/\/+$/, "");
+const SHIM_PATH_SECRET = process.env.SHIM_PATH_SECRET;
+
+// Direct by default; shim mode when BOTH shim vars are set (run `npm run shim`
+// first). Vapi appends /chat/completions, which matches the shim's route.
+const useShim = Boolean(SERVER_URL || SHIM_PATH_SECRET);
+if (useShim && (!SERVER_URL || !SHIM_PATH_SECRET)) {
+  console.error("Shim mode needs BOTH SERVER_URL and SHIM_PATH_SECRET set — leave both unset for the direct integration");
+  process.exit(1);
+}
+const MODEL_URL = useShim
+  ? `${SERVER_URL}/llm/${encodeURIComponent(SHIM_PATH_SECRET!)}`
+  : `${FLOE_CREDIT_API}/v1`;
 
 if (!VAPI_API_KEY) {
   console.error("Set VAPI_API_KEY in .env");
@@ -86,14 +99,14 @@ async function main() {
   // Step 2: the assistant. model.url is THE integration — Vapi appends
   // /chat/completions, so the base is Floe's bare /v1. The model id must be
   // a fully-qualified Floe catalog slug (provider/model — GET /v1/models).
-  console.log("🤖 Creating the assistant...");
+  console.log(`🤖 Creating the assistant (${useShim ? "shim" : "direct"} model.url)...`);
   // Top-level guard already exited on a missing key; assert for the closure.
   const vapi = new VapiClient({ token: VAPI_API_KEY! });
   const assistant = await vapi.assistants.create({
     name: "Floe-Governed Assistant",
     model: {
       provider: "custom-llm" as const,
-      url: `${FLOE_CREDIT_API}/v1`,
+      url: MODEL_URL,
       model: FLOE_MODEL,
       messages: [{ role: "system" as const, content: SYSTEM_PROMPT }],
       // Keep the request body a clean OpenAI chat payload — Vapi's injected

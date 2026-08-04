@@ -70,8 +70,8 @@ async def entrypoint(ctx: agents.JobContext):
     await ctx.connect()
 
     session = AgentSession(
-        # STT — streaming. BYO Deepgram key for now (reads DEEPGRAM_API_KEY).
-        # Swap for Floe's streaming-STT endpoint when it ships.
+        # STT — streaming, BYO Deepgram key (reads DEEPGRAM_API_KEY). Floe's
+        # streaming-STT WebSocket is live too (see README) but not wired here.
         stt=deepgram.STT(model="nova-3"),
 
         # LLM — on Floe. OpenAI-compatible, so we just point the base_url + key at Floe.

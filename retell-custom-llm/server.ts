@@ -47,11 +47,16 @@ const floe = new OpenAI({ baseURL: `${FLOE_CREDIT_API}/v1`, apiKey: FLOE_API_KEY
 
 /** Retell transcript utterance → OpenAI chat message. */
 interface RetellUtterance { role: "agent" | "user"; content: string }
-function toMessages(transcript: RetellUtterance[]): OpenAI.ChatCompletionMessageParam[] {
+function toMessages(transcript: RetellUtterance[], isReminder = false): OpenAI.ChatCompletionMessageParam[] {
   return [
     { role: "system", content: SYSTEM_PROMPT },
     ...transcript.map((u): OpenAI.ChatCompletionMessageParam =>
       u.role === "agent" ? { role: "assistant", content: u.content } : { role: "user", content: u.content }),
+    // reminder_required means the caller went quiet — without this the model
+    // would answer a question nobody asked.
+    ...(isReminder
+      ? [{ role: "system", content: "(The caller has gone quiet. Check in briefly and naturally — don't answer a question they didn't ask.)" } as const]
+      : []),
   ];
 }
 
@@ -64,13 +69,18 @@ interface RetellInbound {
 
 function handleConnection(ws: WebSocket, callId: string) {
   console.log(`[${callId}] Retell connected`);
+  // Without an "error" listener, ws (an EventEmitter) would crash the process.
+  ws.on("error", (err) => console.error(`[${callId}] socket error:`, err.message));
   // Config first: no auto-reconnect churn, and we don't need live transcript
   // deltas (update_only) — each response_required carries the full transcript.
   ws.send(JSON.stringify({ response_type: "config", config: { auto_reconnect: true, call_details: true } }));
 
   // Serialize turns: Retell can fire reminder_required while a response is
-  // streaming; a stale generation must not interleave. Latest response_id wins.
+  // streaming; a stale generation must not interleave. Latest response_id wins,
+  // and the superseded turn's upstream stream is ABORTED — not just muted —
+  // so a barge-in stops buying Floe tokens immediately.
   let activeResponseId = -1;
+  let activeAbort: AbortController | null = null;
 
   ws.on("message", async (raw) => {
     let msg: RetellInbound;
@@ -93,6 +103,9 @@ function handleConnection(ws: WebSocket, callId: string) {
 
     const responseId = msg.response_id ?? 0;
     activeResponseId = responseId;
+    activeAbort?.abort();
+    const abort = new AbortController();
+    activeAbort = abort;
     const send = (content: string, complete: boolean, endCall = false) => {
       if (ws.readyState !== WebSocket.OPEN || activeResponseId !== responseId) return;
       ws.send(JSON.stringify({
@@ -105,11 +118,15 @@ function handleConnection(ws: WebSocket, callId: string) {
     };
 
     try {
-      const stream = await floe.chat.completions.create({
+      const { data: stream, response: raw } = await floe.chat.completions.create({
         model: FLOE_MODEL,
-        messages: toMessages(msg.transcript ?? []),
+        messages: toMessages(msg.transcript ?? [], msg.interaction_type === "reminder_required"),
         stream: true,
-      });
+      }, { signal: abort.signal }).withResponse();
+      // Budget pressure, per turn — headers land before the first token, so
+      // this is where you'd hook tapering to a cheaper slug.
+      const advisory = raw.headers.get("x-floe-budget-advisory");
+      if (advisory) console.log(`[${callId}] [floe budget] ${advisory}`);
       for await (const chunk of stream) {
         const delta = chunk.choices?.[0]?.delta?.content;
         if (delta) send(delta, false);
@@ -117,6 +134,7 @@ function handleConnection(ws: WebSocket, callId: string) {
       }
       send("", true);
     } catch (err) {
+      if (abort.signal.aborted) return; // superseded — the abort is expected
       const status = (err as { status?: number }).status;
       if (status === 402) {
         // The Floe cap: refused BEFORE any tokens were bought. End audibly.
@@ -129,10 +147,14 @@ function handleConnection(ws: WebSocket, callId: string) {
     }
   });
 
-  ws.on("close", () => console.log(`[${callId}] closed`));
+  ws.on("close", () => {
+    activeAbort?.abort(); // don't let an in-flight stream outlive the call
+    console.log(`[${callId}] closed`);
+  });
 }
 
 const wss = new WebSocketServer({ port: PORT });
+wss.on("error", (err) => console.error("WebSocket server error:", err.message));
 wss.on("connection", (ws, req) => {
   // Path: /llm/<secret>/<call_id> — Retell appends the call id itself.
   const parts = (req.url ?? "").split("/").filter(Boolean);

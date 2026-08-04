@@ -39,28 +39,37 @@ if (!assistantId) {
   process.exit(1);
 }
 
-const res = await fetch(`https://api.vapi.ai/assistant/${assistantId}`, {
-  method: "PATCH",
-  headers: { Authorization: `Bearer ${VAPI_API_KEY}`, "Content-Type": "application/json" },
-  body: JSON.stringify({
-    transcriber: {
-      provider: "custom-transcriber",
-      server: {
-        url: `${FLOE_CREDIT_API.replace(/^http/, "ws")}/v1/orchestrator/transcriber`,
-        headers: { Authorization: `Bearer ${FLOE_API_KEY}` },
+let res: Response;
+try {
+  res = await fetch(`https://api.vapi.ai/assistant/${assistantId}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${VAPI_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      transcriber: {
+        provider: "custom-transcriber",
+        server: {
+          url: `${FLOE_CREDIT_API.replace(/^http/, "ws")}/v1/orchestrator/transcriber`,
+          headers: { Authorization: `Bearer ${FLOE_API_KEY}` },
+        },
       },
-    },
-    voice: {
-      provider: "custom-voice",
-      server: {
-        url: `${FLOE_CREDIT_API}/v1/orchestrator/voice`,
-        headers: { Authorization: `Bearer ${FLOE_API_KEY}` },
+      voice: {
+        provider: "custom-voice",
+        server: {
+          url: `${FLOE_CREDIT_API}/v1/orchestrator/voice`,
+          headers: { Authorization: `Bearer ${FLOE_API_KEY}` },
+        },
       },
-    },
-  }),
-});
+    }),
+    // Bounds the whole PATCH, body read included — a dead network rejects
+    // fetch outright, so it never reaches the res.ok branch below.
+    signal: AbortSignal.timeout(30_000),
+  });
+} catch (err) {
+  console.error(`PATCH failed before a response: ${(err as Error).message}`);
+  process.exit(1);
+}
 if (!res.ok) {
-  console.error(`PATCH failed (${res.status}): ${(await res.text()).slice(0, 300)}`);
+  console.error(`PATCH failed (${res.status}): ${(await res.text().catch(() => "")).slice(0, 300)}`);
   process.exit(1);
 }
 console.log(`✅ Assistant ${assistantId}: STT + TTS now run through Floe — metered, gated, one ledger.

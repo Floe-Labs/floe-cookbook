@@ -13,7 +13,7 @@ gateway call**, which puts the model leg under Floe governance:
   limit for this call" and sets `end_call: true` (Retell hangs up cleanly),
 - `X-Floe-Budget-Advisory` available per turn for tapering to a cheaper slug.
 
-```
+```text
  Retell (STT ⇄ TTS ⇄ telephony)
    └── custom-llm  ──wss──►  server.ts  ──SSE──►  Floe /v1/chat/completions
         response_required        │ adapter            metered • gated • ledgered
@@ -34,8 +34,11 @@ Attach the created agent to a Retell number and call it.
 ## Notes
 
 - **Socket auth**: Retell documents no auth header for the custom-LLM socket —
-  the unguessable path secret is the auth. Keep `LLM_PATH_SECRET` long, rotate
-  it by redeploying.
+  the unguessable path secret is the auth. Keep `LLM_PATH_SECRET` long. To
+  rotate it, redeploy with the new secret **and** update the agent's
+  `llm_websocket_url` (or recreate the agent with `npm run setup`) — the URL
+  written at setup time carries the old secret, so a redeploy alone locks the
+  existing agent out.
 - **Turn racing**: Retell can supersede a turn (`reminder_required`, barge-in).
   The adapter tracks the latest `response_id` and abandons stale streams.
 - **The other legs** (STT/TTS/telephony) stay on Retell — govern them with

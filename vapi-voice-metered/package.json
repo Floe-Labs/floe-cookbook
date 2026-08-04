@@ -4,6 +4,7 @@
   "private": true,
   "description": "Point Vapi's custom transcriber + voice at Floe — STT/TTS metered and pre-call gated on one Floe key",
   "type": "module",
+  "engines": { "node": ">=18" },
   "scripts": { "setup": "tsx setup.ts" },
   "dependencies": { "dotenv": "^16.3.1" },
   "devDependencies": { "@types/node": "^20.19.41", "tsx": "^4.20.0", "typescript": "^5.3.0" }

@@ -40,7 +40,10 @@ What `setup.ts` does:
   shim streams Floe's SSE through untouched and turns a `402` into a spoken
   *"I've reached my budget limit for this call."* It also logs
   `X-Floe-Budget-Advisory` per turn (arrives before the first token), which
-  is the hook for tapering to a cheaper model near the limit.
+  is the hook for tapering to a cheaper model near the limit. To provision
+  against it: start the shim, expose it publicly, set `SERVER_URL` +
+  `SHIM_PATH_SECRET` in `.env`, and re-run `npm run setup` — the assistant's
+  `model.url` then points at `$SERVER_URL/llm/$SHIM_PATH_SECRET`.
 - **STT / TTS / telephony stay on Vapi** in this recipe. Govern them too:
   - **Reconcile Mode** — connect the agent (`POST /v1/developer/orchestrators`)
     and point Vapi's server webhook at the returned `call-end` URL: every

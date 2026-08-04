@@ -6,7 +6,7 @@ its STT and TTS run through Floe's orchestrator surfaces (Vapi's own
 BD). Combined with [`vapi-custom-llm`](../vapi-custom-llm), every leg except
 telephony is metered, **pre-call gated**, and on one Floe ledger.
 
-```
+```text
  Vapi call
    ├─ STT  ──wss──►  /v1/orchestrator/transcriber   Deepgram multichannel via Floe
    │                 (stereo customer+assistant)     metered per audio-second
