@@ -57,9 +57,7 @@ agents: rail-agnostic, one key, one ledger, no per-vendor accounts, no crypto.
 - **Budget-capped multi-agent crews** where a runaway loop dies at $1, not $414 — [`crewai-demo`](./crewai-demo)
 - **Metered LLM access** — any OpenAI/Anthropic model behind one billed endpoint with a server-side cap — [`metered-llm`](./metered-llm)
 - **Add Floe to an agent you already have** — route an existing STT→LLM→TTS agent's spend through Floe's keyless gateway by swapping three values (`baseURL`/`apiKey`/model), no provider key — [`drop-in-existing-agent`](./drop-in-existing-agent)
-- **Conversational agents** that pay x402 APIs from natural language — [`langchain-agent`](./langchain-agent)
 - **Zero-install access from Claude Desktop / Cursor** via hosted MCP — [`mcp-demo`](./mcp-demo)
-- **On-chain / self-custody agents** — treasury, yield, and flash-loan strategies — [`yield-optimizer`](./yield-optimizer), [`flash-arb-bot`](./flash-arb-bot)
 
 ## Examples
 
@@ -68,19 +66,16 @@ agents: rail-agnostic, one key, one ledger, no per-vendor accounts, no crypto.
 | **metered-llm** | TypeScript · Python | OpenAI SDK (framework-agnostic) | Beginner | Route any OpenAI/Anthropic model through Floe's metered proxy — per-token billing on one key, capped server-side, your provider key never stored. | [→](./metered-llm) |
 | **drop-in-existing-agent** | TypeScript · Python | Standard `openai` SDK (framework-agnostic) | Beginner | Add Floe to an agent you already have — swap `baseURL`/`apiKey`/model to route an existing STT→LLM→TTS agent's LLM leg through Floe's keyless gateway, no provider key. | [→](./drop-in-existing-agent) |
 | **x402-client** | TypeScript | Coinbase AgentKit | Beginner _(Preview)_ | The minimal payment example: delegate credit to the Floe facilitator, then call any x402 API with automatic, gas-free payment. | [→](./x402-client) |
-| **mcp-demo** | Config only | Claude Desktop / Cursor (MCP) | Beginner | Connect Claude Desktop or Cursor to Floe's hosted MCP server in one line — read markets, intents, and loans with zero install. | [→](./mcp-demo) |
-| **langchain-agent** | Python | LangChain | Beginner _(Preview)_ | A LangChain agent that exposes Floe actions as tools — check markets, borrow, monitor, and repay in natural language. | [→](./langchain-agent) |
+| **mcp-demo** | Config only | Claude Desktop / Cursor (MCP) | Beginner | Connect Claude Desktop or Cursor to Floe's hosted MCP server in one line — create agents, cap spend, and make paid calls with zero install. | [→](./mcp-demo) |
 | **openai-agents** | Config only | OpenAI Agents SDK | Beginner _(Preview)_ | Use Floe from the OpenAI Agents SDK today via MCP fallback, ahead of the native adapter. | [→](./openai-agents) |
 | **crewai-demo** | Python | CrewAI · `crewai-floe` | Intermediate | Per-agent budgets with a hard, server-side ceiling: a rigged loop halts at $1, and a procurement crew enforces allowlists and per-role caps. _(Installs `crewai-floe` from a git branch until it lands on PyPI — see its README.)_ | [→](./crewai-demo) |
 | **vapi-voice-agent** | TypeScript | Vapi · GPT-4o · ElevenLabs · Exa | Intermediate | An outbound voice concierge that pays for live web search through Floe, tapers as it nears its budget, and audibly hard-stops at the cap. | [→](./vapi-voice-agent) |
-| **yield-optimizer** | TypeScript | Coinbase AgentKit | Intermediate _(Preview)_ | A treasury agent that borrows USDC against WETH, deploys to a yield strategy, monitors loan health, and repays. On-chain / self-custody. | [→](./yield-optimizer) |
 | **vapi-venice-voice-agent** | TypeScript | Vapi · Venice · ElevenLabs · Exa | Advanced | Same voice concierge, but the **LLM inference itself** runs on Venice through Floe — model *and* tools metered on one key, with an audible hard-stop. | [→](./vapi-venice-voice-agent) |
 | **hydra-memory-agent** | TypeScript | Vapi · Venice · HydraDB | Advanced | A voice concierge with **persistent memory** — it stores caller facts in HydraDB and recalls them, so a later call greets you by name. Brain (Venice) + memory (HydraDB) on **one Floe key**, no vendor keys. | [→](./hydra-memory-agent) |
-| **flash-arb-bot** | TypeScript | Coinbase AgentKit | Advanced _(Preview)_ | On-chain flash-loan arbitrage across Aerodrome pools — a crypto-native / MEV strategy on Floe's lending surface. | [→](./flash-arb-bot) |
 
 > **Difficulty** is a rough guide: _Beginner_ = a key and a few minutes;
 > _Intermediate_ = a webhook, a framework, or a running server;
-> _Advanced_ = self-custody / on-chain setup (a funded wallet, an RPC endpoint).
+> _Advanced_ = a multi-vendor stack (e.g. Venice inference, HydraDB memory).
 > **_(Preview)_** marks examples whose script is a printed walkthrough of the
 > flow — full docs and env setup, but not yet runnable against the live API.
 > Runnable versions are on the way; each README says exactly what runs today.
@@ -132,8 +127,7 @@ pip install -r requirements.txt && python main.py
 ```
 
 You'll need a Floe API key — [get one at the dashboard](https://dev-dashboard.floelabs.xyz)
-and fund it with a card. No wallet or crypto required for the spend-layer
-examples; the on-chain examples list their extra prerequisites.
+and fund it with a card. No wallet or crypto required.
 
 ## Use Floe from Claude Code
 
