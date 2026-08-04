@@ -21,7 +21,7 @@ about building agents on Floe.
 ## Adding an example
 
 1. Create a new top-level folder named for the framework or use case
-   (e.g. `langchain-agent`, `metered-llm`).
+   (e.g. `vapi-voice-agent`, `metered-llm`).
 2. Add a `.env.example` listing every variable the example reads, with a short
    comment on what each is. Never commit real keys — `.env` is gitignored.
 3. Write a `README.md` following [docs/EXAMPLE_TEMPLATE.md](./docs/EXAMPLE_TEMPLATE.md).
