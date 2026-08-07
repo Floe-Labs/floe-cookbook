@@ -40,7 +40,7 @@ rest so the budget still trues up before the next call.
 
 At end of call, your agent code does one POST:
 
-```
+```http
 POST {FLOE_CREDIT_API}/v1/webhooks/{pipecat|livekit}/call-end/{token}
 X-Floe-Signature: <hex HMAC-SHA256(secret, raw request body)>
 Content-Type: application/json
@@ -64,6 +64,7 @@ Register once, either way:
 
 - **Dashboard**: [dev-dashboard.floelabs.xyz](https://dev-dashboard.floelabs.xyz) → your agent → Reconcile / orchestrators.
 - **API**: `POST /v1/developer/orchestrators` with a developer key (`floe_live_…`):
+
   ```json
   { "agentId": 123, "provider": "pipecat", "label": "my voice agent" }
   ```

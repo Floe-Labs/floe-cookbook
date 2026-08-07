@@ -81,18 +81,23 @@ raw = json.dumps(body, separators=(",", ":")).encode("utf-8")
 signature = hmac.new(secret.encode("utf-8"), raw, hashlib.sha256).hexdigest()
 
 url = f"{FLOE_CREDIT_API}/v1/webhooks/{provider}/call-end/{token}"
-print(f"POST {url}")
+# Redact the capability token in logs — it identifies this connection endpoint,
+# so keep it out of CI output / shared terminals (the full token is still sent).
+print(f"POST {FLOE_CREDIT_API}/v1/webhooks/{provider}/call-end/<redacted>")
 print(f"  {external_call_id}  ${cost_usd}  {duration_seconds}s")
 
-resp = requests.post(
-    url,
-    data=raw,  # send the signed bytes verbatim (not json=, which re-serializes)
-    headers={
-        "Content-Type": "application/json",
-        "X-Floe-Signature": signature,  # hex HMAC-SHA256(secret, raw body)
-    },
-    timeout=30,
-)
+try:
+    resp = requests.post(
+        url,
+        data=raw,  # send the signed bytes verbatim (not json=, which re-serializes)
+        headers={
+            "Content-Type": "application/json",
+            "X-Floe-Signature": signature,  # hex HMAC-SHA256(secret, raw body)
+        },
+        timeout=30,
+    )
+except requests.RequestException as exc:
+    sys.exit(f"\nnetwork error posting to Floe: {exc}")
 
 if resp.status_code == 200:
     print(f"\nok — recorded on your Floe ledger. Response: {resp.text}")
