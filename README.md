@@ -60,6 +60,7 @@ agents: rail-agnostic, one key, one ledger, no per-vendor accounts, no crypto.
 - **Add Floe to an agent you already have** — route an existing STT→LLM→TTS agent's spend through Floe's keyless gateway by swapping three values (`baseURL`/`apiKey`/model), no provider key — [`drop-in-existing-agent`](./drop-in-existing-agent)
 - **Zero-install access from Claude Desktop / Cursor** via hosted MCP — [`mcp-demo`](./mcp-demo)
 - **Budget-enforce a self-hosted Pipecat / LiveKit agent** — self-report each call's cost so budgets true up between sessions — [`pipecat-livekit-reconcile`](./pipecat-livekit-reconcile)
+- **Graduate a Vapi / Retell / Bland agent to 100% coverage** — move every leg (LLM, STT, TTS, telephony) off the orchestrator onto Floe rails so the whole call is gated pre-call, not reconciled after — [`migrate-to-full-coverage`](./migrate-to-full-coverage)
 
 ## Examples
 
@@ -75,6 +76,7 @@ agents: rail-agnostic, one key, one ledger, no per-vendor accounts, no crypto.
 | **vapi-venice-voice-agent** | TypeScript | Vapi · Venice · ElevenLabs · Exa | Advanced | Same voice concierge, but the **LLM inference itself** runs on Venice through Floe — model *and* tools metered on one key, with an audible hard-stop. | [→](./vapi-venice-voice-agent) |
 | **hydra-memory-agent** | TypeScript | Vapi · Venice · HydraDB | Advanced | A voice concierge with **persistent memory** — it stores caller facts in HydraDB and recalls them, so a later call greets you by name. Brain (Venice) + memory (HydraDB) on **one Floe key**, no vendor keys. | [→](./hydra-memory-agent) |
 | **pipecat-livekit-reconcile** | Python | Pipecat · LiveKit Agents (self-hosted) | Intermediate | Reconcile Mode for self-hosted voice agents: no platform cost webhook exists, so your code POSTs each call's cost (signed) at session end — Floe enforces the budget on the next session. The better path (pre-call gating) is routing legs through Floe; this closes the gap on legs it doesn't carry. | [→](./pipecat-livekit-reconcile) |
+| **migrate-to-full-coverage** | Guide | Pipecat / LiveKit on Floe | Intermediate | The "graduate to 100% coverage" path: move each leg (LLM, STT, TTS, telephony) off Vapi/Retell/Bland onto Floe rails, flipping every reconciled leg to pre-call enforcement. Stitches the full-stack recipes with a cost/coverage calculator. | [→](./migrate-to-full-coverage) |
 
 > **Difficulty** is a rough guide: _Beginner_ = a key and a few minutes;
 > _Intermediate_ = a webhook, a framework, or a running server;

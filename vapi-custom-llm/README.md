@@ -49,8 +49,9 @@ What `setup.ts` does:
     and point Vapi's server webhook at the returned `call-end` URL: every
     call's full cost lands on the Floe ledger post-call, counts against your
     policies, and a tripped `suspend_agent` policy blocks the next session.
-  - Or move legs onto Floe rails entirely — see the migration guide in the
-    Floe docs ("graduate to 100% coverage").
+  - Or move legs onto Floe rails entirely — see
+    [`migrate-to-full-coverage`](../migrate-to-full-coverage) (graduate to 100%
+    coverage: every leg gated pre-call).
 
 ## Spend proof
 
