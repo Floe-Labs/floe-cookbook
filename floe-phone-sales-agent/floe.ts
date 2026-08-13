@@ -16,7 +16,7 @@ const BASE = process.env.FLOE_CREDIT_API || "https://credit-api.floelabs.xyz";
 const AGENT_KEY = process.env.FLOE_API_KEY || "";
 const DEV_KEY = process.env.FLOE_LIVE_KEY || "";
 
-export const MODEL = process.env.FLOE_MODEL || "openai/gpt-4o-mini";
+export const MODEL = process.env.FLOE_MODEL || "openai/gpt-5.4-mini";
 
 /** Budget advisory the proxy/gateway stamps on paid responses (flag-gated JSON). */
 export interface BudgetAdvisory {
@@ -144,7 +144,7 @@ export async function setVoiceConfig(
   if (!res.ok) throw new Error(`setVoiceConfig ${res.status}: ${(await res.text()).slice(0, 200)}`);
 }
 
-// ── Spend cap for the whole campaign (agent key) ─────────────────────────────
+// ── Spend caps: campaign session + per-call task (agent key) ─────────────────
 
 export async function setSessionLimit(limitRaw: string): Promise<void> {
   const res = await fetch(`${BASE}/v1/agents/spend-limit`, {
@@ -153,6 +153,18 @@ export async function setSessionLimit(limitRaw: string): Promise<void> {
     body: JSON.stringify({ limitRaw }),
   });
   if (!res.ok) throw new Error(`setSessionLimit ${res.status}: ${(await res.text()).slice(0, 200)}`);
+}
+
+// Per-call task budget. Tagging requests with X-Floe-Task-Id only ATTRIBUTES
+// spend; this policy makes the tag an enforced cap on that one call's LLM +
+// tool legs. matchKey is the callId (lowercased).
+export async function createTaskPolicy(matchKey: string, limitRaw: string): Promise<void> {
+  const res = await fetch(`${BASE}/v1/agents/policies`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${AGENT_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ kind: "task", matchKey, limitRaw, windowSeconds: 86400, label: "per-call cap" }),
+  });
+  if (!res.ok) throw new Error(`createTaskPolicy ${res.status}: ${(await res.text()).slice(0, 200)}`);
 }
 
 // ── Outbound call (agent key) ────────────────────────────────────────────────
