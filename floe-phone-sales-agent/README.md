@@ -71,6 +71,7 @@ npx tsx report.ts             # dispositions + cost per demo request, from the F
 | `store.ts` | tiny JSON store for outcomes — swap for your CRM |
 
 ## Tuning
+
 - **Model:** `FLOE_MODEL` (default `openai/gpt-5.4-mini`) — any Floe Inference model; pick a fast one for voice.
 - **Pitch / script:** `SYSTEM_PROMPT` in `server.ts`. **Greeting:** `BEGIN_MESSAGE` in `setup.ts`.
 - **Budget:** `FLOE_SESSION_LIMIT_RAW` (USDC base units; `2000000` = $2.00 across the campaign); `PER_CALL_TASK_CAP_RAW` (`500000` = $0.50 per call, empty disables).
