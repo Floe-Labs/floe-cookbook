@@ -48,3 +48,21 @@ Attach the created agent to a Retell number and call it.
   inbound webhook at the `pre-call` URL — an over-budget agent's next inbound
   call is rejected before it connects.
 - Spend proof: `GET /v1/agents/transactions` on your Floe key.
+
+## Guarded by floe-guard
+
+The `402` above is Floe's *balance*, enforced server-side. [floe-guard](https://github.com/Floe-Labs/floe-guard) adds a **local budget ceiling** — a dollar cap you own in-process (`FLOE_LOCAL_BUDGET_USD`) that refuses a turn *before* it ever calls Floe. One guard per call plus the Retell adapter (`server.ts`):
+
+```ts
+const guard = new BudgetGuard(FLOE_LOCAL_BUDGET_USD);
+const budget = new RetellBudgetGuard(guard, { model: FLOE_MODEL });
+
+const turn = budget.beginTurn({ interaction_type: msg.interaction_type, response_id: responseId });
+if (!turn.admitted) { send(BUDGET_STOP_LINE, true, true); return; }   // over the local cap
+// … stream the turn …
+budget.settleTurn(responseId, { promptTokens, completionTokens });   // meter real usage
+```
+
+`beginTurn` reserves before the model call and `settleTurn` meters the real token usage after; a newer `response_id` (barge-in) releases the prior turn's hold, and `budget.close()` frees any open reservation on hangup. Scope is pre-turn admission + per-turn settlement — nothing cuts a turn off partway.
+
+> **Dependency note:** `"floe-guard": "^0.12.0"` in `package.json` resolves once floe-guard's voice-adapters release (PR [#76](https://github.com/Floe-Labs/floe-guard)) publishes to npm — this wiring is illustrative until then.

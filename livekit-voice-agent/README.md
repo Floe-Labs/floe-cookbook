@@ -33,3 +33,15 @@ stt = deepgram.STT(model="nova-3")   # BYO key variant — or use Floe streaming
 Model ids stay **fully qualified** (`provider/model`) — that's what Floe Inference expects. See [Floe Inference](https://floe-labs.gitbook.io/docs/developers/keyless-inference) and [Add Floe to your existing pipeline](https://floe-labs.gitbook.io/docs/getting-started/integrate-existing-pipeline).
 
 > **Enhancement:** to tag LLM/TTS calls with a per-session `X-Floe-Task-Id` (so a task budget bounds one conversation), pass a custom OpenAI client / default headers to the plugin. Left out here to keep the wiring obvious.
+
+## Guarded by floe-guard
+
+The Floe spend cap above is a *balance* enforced server-side. [floe-guard](https://github.com/Floe-Labs/floe-guard) adds a **local budget ceiling** — a dollar cap you own in-process that hard-stops a turn *before* its LLM call once this call's spend would cross it. Two lines wire it (`agent.py`):
+
+```python
+guard = BudgetGuard(limit_usd=FLOE_LOCAL_BUDGET_USD)
+budget = LiveKitBudgetGuard(guard, model=FLOE_LLM_MODEL, stt_model="deepgram-nova-3")
+budget.attach(session, agent)   # wraps llm_node (reserve) + metrics_collected (settle)
+```
+
+`attach` reserves against the ceiling before each model turn and settles the real token usage after — plus it meters the **Deepgram STT leg**, the one leg Floe never sees on this recipe. Scope is pre-turn admission + per-turn settlement: an admitted turn runs to completion, nothing cuts a turn off partway. Tune `FLOE_LOCAL_BUDGET_USD` in `.env`.

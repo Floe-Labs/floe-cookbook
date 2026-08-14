@@ -27,6 +27,13 @@ from livekit import agents
 from livekit.agents import Agent, AgentSession
 from livekit.plugins import openai, deepgram, silero
 
+# floe-guard: a LOCAL budget ceiling (a dollar cap you own in-process), separate
+# from the balance Floe enforces server-side. It hard-stops a turn BEFORE the LLM
+# call once this call's spend would cross the cap, and meters the Deepgram STT
+# leg too — the one leg Floe never sees (see the guard wiring in entrypoint()).
+from floe_guard import BudgetGuard
+from floe_guard.integrations.livekit import LiveKitBudgetGuard
+
 load_dotenv()
 
 
@@ -48,6 +55,9 @@ FLOE_API_KEY = os.environ["FLOE_API_KEY"]  # floe_… agent key (validated above
 FLOE_LLM_MODEL = os.environ.get("FLOE_LLM_MODEL", "openai/gpt-4o-mini")   # any Floe Inference model
 FLOE_TTS_MODEL = os.environ.get("FLOE_TTS_MODEL", "openai/tts-1")
 FLOE_TTS_VOICE = os.environ.get("FLOE_TTS_VOICE", "alloy")
+# Local per-call ceiling for floe-guard, in USD. This is the guard's own budget,
+# not the Floe balance — set it to what a single call is allowed to spend.
+FLOE_LOCAL_BUDGET_USD = float(os.environ.get("FLOE_LOCAL_BUDGET_USD", "0.50"))
 
 
 class Assistant(Agent):
@@ -85,7 +95,17 @@ async def entrypoint(ctx: agents.JobContext):
         vad=ctx.proc.userdata["vad"],
     )
 
-    await session.start(agent=Assistant(), room=ctx.room)
+    # The guard line: one local BudgetGuard + the LiveKit adapter. `attach` wraps
+    # the agent's llm_node (reserve/hard-stop before each model turn) and the
+    # session's metrics_collected event (settle real token usage, and meter the
+    # Deepgram STT leg from stt_model). Pre-turn admission + per-turn settlement —
+    # an admitted turn runs to completion; nothing here cuts a turn off partway.
+    guard = BudgetGuard(limit_usd=FLOE_LOCAL_BUDGET_USD)
+    budget = LiveKitBudgetGuard(guard, model=FLOE_LLM_MODEL, stt_model="deepgram-nova-3")
+
+    agent = Assistant()
+    budget.attach(session, agent)
+    await session.start(agent=agent, room=ctx.room)
     await session.generate_reply(instructions="Greet the caller and ask how you can help.")
 
 
