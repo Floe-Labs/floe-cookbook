@@ -12,7 +12,7 @@
  */
 import "dotenv/config";
 import { readFileSync, existsSync } from "node:fs";
-import { placeCall, getCallStatus, requireEnv } from "./floe.js";
+import { placeCall, getCallStatus, createTaskPolicy, requireEnv } from "./floe.js";
 import { linkLead } from "./store.js";
 
 requireEnv();
@@ -29,6 +29,8 @@ const DIAL_INTERVAL_MS = Number(process.env.DIAL_INTERVAL_MS) || 1500;
 const POLL_INTERVAL_MS = Number(process.env.POLL_INTERVAL_MS) || 3000;
 // Cap the wait so one stuck/never-ending call can't hang the whole campaign.
 const MAX_CALL_WAIT_MS = Number(process.env.MAX_CALL_WAIT_MS) || 8 * 60 * 1000;
+// Per-call task cap in USDC base units (default $0.50). Empty string disables.
+const PER_CALL_TASK_CAP_RAW = process.env.PER_CALL_TASK_CAP_RAW ?? "500000";
 
 // Truly one-at-a-time: block until the call ends (GET /v1/calls/:id → terminal)
 // or the cap elapses, so conversations don't overlap. Transient poll errors are
@@ -59,8 +61,17 @@ async function main() {
     } catch (e) {
       console.error(`   ✗ ${lead.phone}: ${(e as Error).message}`);
     }
-    // Wait for THIS call to finish before dialing the next one.
     if (callId) {
+      // Enforce (not just attribute) this call's X-Floe-Task-Id budget with a
+      // task policy. Non-fatal: the campaign session cap still bounds spend.
+      if (PER_CALL_TASK_CAP_RAW) {
+        try {
+          await createTaskPolicy(callId.toLowerCase(), PER_CALL_TASK_CAP_RAW);
+        } catch (e) {
+          console.warn(`     ⚠ per-call cap not set: ${(e as Error).message}`);
+        }
+      }
+      // Wait for THIS call to finish before dialing the next one.
       const outcome = await waitForCallEnd(callId);
       if (outcome === "timeout") console.log(`     …still active after ${MAX_CALL_WAIT_MS / 1000}s — moving on (call keeps running).`);
     }

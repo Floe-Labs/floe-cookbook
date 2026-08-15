@@ -57,7 +57,7 @@ npx tsx report.ts             # dispositions + cost per demo request, from the F
 ```
 
 ## How spend stays on one key
-`setup.ts` sets a **campaign cap** (`PUT /v1/agents/spend-limit`). During a call, `server.ts` tags every model + tool request with `X-Floe-Task-Id=<callId>`, so the LLM turns and the paid research lookup roll into the same task budget as the call's phone legs. When the cap is hit, Floe refuses the next paid call and the agent wraps up gracefully (`report.ts` shows the spend). Nothing runs uncapped — `setup.ts` fails closed if the cap can't be set.
+`setup.ts` sets a **campaign cap** (`PUT /v1/agents/spend-limit`). During a call, `server.ts` tags every model + tool request with `X-Floe-Task-Id=<callId>`, so the LLM turns and the paid research lookup roll into the same task budget as the call's phone legs. Right after each call is placed, the dialer also creates a **per-call task policy** (`POST /v1/agents/policies`, `PER_CALL_TASK_CAP_RAW`, default $0.50) so that task budget is *enforced*, not just attributed. When a cap is hit, Floe refuses the next paid call and the agent wraps up gracefully (`report.ts` shows the spend). Nothing runs uncapped — `setup.ts` fails closed if the campaign cap can't be set.
 
 ## Files
 | File | What it does |
@@ -67,11 +67,12 @@ npx tsx report.ts             # dispositions + cost per demo request, from the F
 | `campaign.ts` | dial a lead list one call at a time (`leads.json`, else `leads.example.json`) |
 | `call.ts` | single "the agent calls you" test |
 | `report.ts` | dispositions + cost-per-demo-request |
-| `floe.ts` | thin Floe client (keyless chat, x402 proxy, phone, spend-limit) |
+| `floe.ts` | thin Floe client (keyless chat, x402 proxy, phone, spend caps) |
 | `store.ts` | tiny JSON store for outcomes — swap for your CRM |
 
 ## Tuning
-- **Model:** `FLOE_MODEL` (default `openai/gpt-4o-mini`) — any Floe Inference model; pick a fast one for voice.
+
+- **Model:** `FLOE_MODEL` (default `openai/gpt-5.4-mini`) — any Floe Inference model; pick a fast one for voice.
 - **Pitch / script:** `SYSTEM_PROMPT` in `server.ts`. **Greeting:** `BEGIN_MESSAGE` in `setup.ts`.
-- **Budget:** `FLOE_SESSION_LIMIT_RAW` (USDC base units; `2000000` = $2.00 across the campaign).
+- **Budget:** `FLOE_SESSION_LIMIT_RAW` (USDC base units; `2000000` = $2.00 across the campaign); `PER_CALL_TASK_CAP_RAW` (`500000` = $0.50 per call, empty disables).
 - **Real tools:** `research_prospect` hits Exa via the Floe proxy — add your CRM/enrichment/scheduler tools the same way (route them through Floe so they meter too).
