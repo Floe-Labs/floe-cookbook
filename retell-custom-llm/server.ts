@@ -159,12 +159,25 @@ function handleConnection(ws: WebSocket, callId: string) {
         if (delta) send(delta, false);
         if (activeResponseId !== responseId) return; // superseded — newer turn frees the hold
       }
-      send("", true);
-      // Settle the reservation against real token usage (0/0 if the gateway sent none).
+      // Settle on REAL token usage BEFORE marking the turn complete. include_usage
+      // (above) makes the terminal chunk carry it; if it's ever missing the guard
+      // can't measure this turn — fail closed: free the hold and end the call rather
+      // than record a free (unmetered) turn.
+      if (
+        !usage ||
+        !Number.isFinite(usage.prompt_tokens) ||
+        !Number.isFinite(usage.completion_tokens)
+      ) {
+        console.error(`[${callId}] no token usage for turn ${responseId} — ending call (guard can't meter)`);
+        budget.close(); // release the still-open reservation
+        send("Sorry, I hit a problem on my end. Goodbye.", true, true); // content_complete + end_call
+        return;
+      }
       budget.settleTurn(responseId, {
-        promptTokens: usage?.prompt_tokens ?? 0,
-        completionTokens: usage?.completion_tokens ?? 0,
+        promptTokens: usage.prompt_tokens,
+        completionTokens: usage.completion_tokens,
       });
+      send("", true);
     } catch (err) {
       if (abort.signal.aborted) return; // superseded — the abort is expected
       const status = (err as { status?: number }).status;

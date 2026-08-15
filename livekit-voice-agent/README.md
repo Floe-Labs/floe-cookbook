@@ -36,7 +36,7 @@ Model ids stay **fully qualified** (`provider/model`) — that's what Floe Infer
 
 ## Guarded by floe-guard
 
-The Floe spend cap above is a *balance* enforced server-side. [floe-guard](https://github.com/Floe-Labs/floe-guard) adds a **local budget ceiling** — a dollar cap you own in-process that hard-stops a turn *before* its LLM call once this call's spend would cross it. Two lines wire it (`agent.py`):
+The Floe spend cap above is a *balance* enforced server-side. [floe-guard](https://github.com/Floe-Labs/floe-guard) adds a **local budget ceiling** — a dollar cap you own in-process that hard-stops a turn *before* its LLM call once this call's spend would cross it. Three lines wire it (`agent.py`):
 
 ```python
 guard = BudgetGuard(limit_usd=FLOE_LOCAL_BUDGET_USD)

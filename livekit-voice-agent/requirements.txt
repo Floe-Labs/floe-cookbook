@@ -3,5 +3,6 @@ livekit-plugins-openai>=1.0
 livekit-plugins-deepgram>=1.0
 livekit-plugins-silero>=1.0
 python-dotenv>=1.0
-# floe-guard: local budget ceiling + LiveKit adapter (floe_guard.integrations.livekit)
-floe-guard>=0.16.1
+# floe-guard: local budget ceiling + LiveKit adapter (floe_guard.integrations.livekit).
+# The [livekit] extra pulls the tested livekit-agents floor the adapter needs.
+floe-guard[livekit]>=0.16.1
