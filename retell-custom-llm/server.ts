@@ -22,8 +22,6 @@
  */
 import { WebSocketServer, WebSocket } from "ws";
 import OpenAI from "openai";
-import { BudgetGuard } from "floe-guard";
-import { RetellBudgetGuard } from "floe-guard/adapters/retell";
 import "dotenv/config";
 
 const FLOE_API_KEY = process.env.FLOE_API_KEY!;
@@ -31,9 +29,6 @@ const FLOE_MODEL = process.env.FLOE_MODEL || "openai/gpt-4o-mini";
 const LLM_PATH_SECRET = process.env.LLM_PATH_SECRET;
 const FLOE_CREDIT_API = (process.env.FLOE_CREDIT_API_URL || "https://credit-api.floelabs.xyz").replace(/\/+$/, "");
 const PORT = Number(process.env.PORT || 3112);
-// floe-guard: a LOCAL per-call budget ceiling (a dollar cap you own in-process),
-// separate from the balance Floe enforces server-side. One guard per call.
-const FLOE_LOCAL_BUDGET_USD = Number(process.env.FLOE_LOCAL_BUDGET_USD || "0.10");
 
 if (!FLOE_API_KEY?.startsWith("floe_") || FLOE_API_KEY.startsWith("floe_live_")) {
   console.error("Set FLOE_API_KEY in .env to an AGENT key (floe_<hex>)");
@@ -74,12 +69,6 @@ interface RetellInbound {
 
 function handleConnection(ws: WebSocket, callId: string) {
   console.log(`[${callId}] Retell connected`);
-  // One local BudgetGuard per call + the Retell adapter. beginTurn reserves a
-  // turn's budget before the LLM call (blocking it if this call is over the local
-  // ceiling); settleTurn meters the real token usage after; close() frees any
-  // still-open reservation on hangup. This is the local twin of Floe's remote cap.
-  const guard = new BudgetGuard(FLOE_LOCAL_BUDGET_USD);
-  const budget = new RetellBudgetGuard(guard, { model: FLOE_MODEL });
   // Without an "error" listener, ws (an EventEmitter) would crash the process.
   ws.on("error", (err) => console.error(`[${callId}] socket error:`, err.message));
   // Config first: no auto-reconnect churn, and we don't need live transcript
@@ -128,55 +117,21 @@ function handleConnection(ws: WebSocket, callId: string) {
       }));
     };
 
-    // floe-guard pre-turn admission: reserve this turn's budget BEFORE the model
-    // call. Over the local ceiling → speak a wrap-up and end the call, never
-    // reaching Floe. A newer response_id releases the prior turn's hold (barge-in),
-    // mirroring the activeAbort above.
-    const turn = budget.beginTurn({ interaction_type: msg.interaction_type, response_id: responseId });
-    if (!turn.admitted) {
-      console.log(`[${callId}] local budget exhausted → spoken stop + end_call`);
-      send(BUDGET_STOP_LINE, true, true);
-      return;
-    }
-
     try {
       const { data: stream, response: raw } = await floe.chat.completions.create({
         model: FLOE_MODEL,
         messages: toMessages(msg.transcript ?? [], msg.interaction_type === "reminder_required"),
         stream: true,
-        // Ask the gateway for the terminal usage block so the guard settles the
-        // turn on REAL tokens (OpenAI-style SSE omits usage without this).
-        stream_options: { include_usage: true },
       }, { signal: abort.signal }).withResponse();
       // Budget pressure, per turn — headers land before the first token, so
       // this is where you'd hook tapering to a cheaper slug.
       const advisory = raw.headers.get("x-floe-budget-advisory");
       if (advisory) console.log(`[${callId}] [floe budget] ${advisory}`);
-      let usage: OpenAI.CompletionUsage | undefined;
       for await (const chunk of stream) {
-        if (chunk.usage) usage = chunk.usage; // final (empty-choices) chunk carries it
         const delta = chunk.choices?.[0]?.delta?.content;
         if (delta) send(delta, false);
-        if (activeResponseId !== responseId) return; // superseded — newer turn frees the hold
+        if (activeResponseId !== responseId) return; // superseded mid-stream
       }
-      // Settle on REAL token usage BEFORE marking the turn complete. include_usage
-      // (above) makes the terminal chunk carry it; if it's ever missing the guard
-      // can't measure this turn — fail closed: free the hold and end the call rather
-      // than record a free (unmetered) turn.
-      if (
-        !usage ||
-        !Number.isFinite(usage.prompt_tokens) ||
-        !Number.isFinite(usage.completion_tokens)
-      ) {
-        console.error(`[${callId}] no token usage for turn ${responseId} — ending call (guard can't meter)`);
-        budget.close(); // release the still-open reservation
-        send("Sorry, I hit a problem on my end. Goodbye.", true, true); // content_complete + end_call
-        return;
-      }
-      budget.settleTurn(responseId, {
-        promptTokens: usage.prompt_tokens,
-        completionTokens: usage.completion_tokens,
-      });
       send("", true);
     } catch (err) {
       if (abort.signal.aborted) return; // superseded — the abort is expected
@@ -194,7 +149,6 @@ function handleConnection(ws: WebSocket, callId: string) {
 
   ws.on("close", () => {
     activeAbort?.abort(); // don't let an in-flight stream outlive the call
-    budget.close();       // free any still-open turn reservation on hangup
     console.log(`[${callId}] closed`);
   });
 }
