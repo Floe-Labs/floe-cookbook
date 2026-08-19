@@ -113,12 +113,14 @@ export async function proxyFetch(
 
 // ── Provisioning (developer key) ─────────────────────────────────────────────
 
-export async function ensureNumber(agentId: string, areaCode?: string): Promise<{ id: number; phoneNumber: string }> {
-  // Buy one; if the agent already has a number, list and reuse it.
+export async function ensureNumber(agentId: string, areaCode: string): Promise<{ id: number; phoneNumber: string }> {
+  // Buy one in the requested area code (required — the carrier picks a number
+  // by area code or exact E.164, never "any US number"); if the agent already
+  // has a number, list and reuse it.
   const buy = await fetch(`${BASE}/v1/developer/agents/${agentId}/numbers`, {
     method: "POST",
     headers: { Authorization: `Bearer ${DEV_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify(areaCode ? { areaCode } : {}),
+    body: JSON.stringify({ areaCode }),
   });
   if (buy.ok) return (await buy.json()).number;
   if (buy.status === 409) {
