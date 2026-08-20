@@ -15,6 +15,8 @@ import { ensureNumber, setVoiceConfig, setSessionLimit } from "./floe.js";
 const AGENT_ID = process.env.FLOE_AGENT_ID;
 const SERVER_URL = process.env.SERVER_URL;
 const SESSION_LIMIT_RAW = process.env.FLOE_SESSION_LIMIT_RAW || "2000000";
+// Required: Floe Phone picks the number by US area code (there is no "any
+// US number" purchase — the API refuses with 400 area_code_required).
 const AREA_CODE = process.env.AREA_CODE;
 
 for (const [k, v] of Object.entries({
@@ -23,8 +25,13 @@ for (const [k, v] of Object.entries({
   FLOE_AGENT_ID: AGENT_ID,
   SERVER_URL,
   WEBHOOK_SECRET: process.env.WEBHOOK_SECRET,
+  AREA_CODE,
 })) {
   if (!v) { console.error(`Set ${k} in .env`); process.exit(1); }
+}
+if (!/^[2-9]\d{2}$/.test(AREA_CODE!)) {
+  console.error("AREA_CODE must be a 3-digit US area code, 2xx–9xx (e.g. 415).");
+  process.exit(1);
 }
 if (!/^https:\/\//.test(SERVER_URL!)) {
   console.error("SERVER_URL must be https — Floe's webhook requires it. Use ngrok (ngrok http 3000).");
@@ -52,7 +59,7 @@ async function main() {
 
   // 2) Phone number (buys one, or reuses the agent's existing number).
   console.log("☎️  Ensuring the agent has a Floe Phone number...");
-  const num = await ensureNumber(AGENT_ID!, AREA_CODE);
+  const num = await ensureNumber(AGENT_ID!, AREA_CODE!);
   console.log(`   ✅ ${num.phoneNumber} (id ${num.id})\n`);
 
   // 3) Webhook voice mode → this server.
