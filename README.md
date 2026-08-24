@@ -1,6 +1,6 @@
 <p align="center">
   <h1 align="center">🍳 Floe Cookbook</h1>
-  <p align="center">Reference AI agents built on Floe — cost-truth and margin for voice AI. One Floe key pays every vendor and meters what each call costs.</p>
+  <p align="center">Reference AI agents built on Floe — know what every AI call really costs. Floe costs each call across every vendor, shows your margin per client, and lets you invoice your own customers off the actuals. One Floe key pays every vendor and meters what each call costs.</p>
 </p>
 
 <p align="center">
