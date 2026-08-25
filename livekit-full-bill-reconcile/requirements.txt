@@ -1,0 +1,15 @@
+livekit-agents>=1.0
+livekit-plugins-openai>=1.0
+livekit-plugins-deepgram>=1.0
+livekit-plugins-elevenlabs>=1.0
+livekit-plugins-silero>=1.0
+python-dotenv>=1.0
+# floe-guard: one local budget + the LiveKit adapter. The adapter's record_tool()
+# — which lands avatar and paid-tool legs on the same budget — ships in 0.22.0.
+# The [livekit] extra pulls the tested livekit-agents floor the adapter needs.
+#
+# PREVIEW: 0.22.0 is not on PyPI yet, so this installs floe-guard from source,
+# pinned to the release commit (immutable — survives the branch being deleted).
+# Once 0.22.0 is published, replace the line below with:
+#     floe-guard[livekit]>=0.22.0
+floe-guard[livekit] @ git+https://github.com/Floe-Labs/floe-guard.git@b7d33b72ed9dbefc43674b5c5f977143cd5feec0
