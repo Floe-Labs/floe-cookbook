@@ -52,6 +52,8 @@ cp .env.example .env      # Floe agent key, Deepgram, ElevenLabs, LiveKit creds
 python agent.py dev       # LiveKit Agents dev mode — connect from the LiveKit playground
 ```
 
+> **Preview dependency.** This recipe needs floe-guard's `record_tool()` (avatar + paid-tool metering), which ships in **0.22.0** — not on PyPI yet, so `requirements.txt` installs floe-guard from source at the release commit. Once 0.22.0 is published, swap that line for `floe-guard[livekit]>=0.22.0`.
+
 Ask the agent about a company to trigger the paid `lookup_company` tool. At call
 end you'll see a `[reconcile] synced N leg(s)` line — the STT/TTS/avatar/tool
 legs landing on your ledger. Set `FLOE_RECONCILE_DRY_RUN=1` to print those legs
