@@ -1,0 +1,10 @@
+livekit-agents>=1.0
+livekit-plugins-openai>=1.0
+livekit-plugins-deepgram>=1.0
+livekit-plugins-elevenlabs>=1.0
+livekit-plugins-silero>=1.0
+python-dotenv>=1.0
+# floe-guard: one local budget + the LiveKit adapter. 0.22.0 adds the adapter's
+# record_tool(), which lands avatar and paid-tool legs on the same budget.
+# The [livekit] extra pulls the tested livekit-agents floor the adapter needs.
+floe-guard[livekit]>=0.22.0
