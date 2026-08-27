@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <a href="https://floelabs.xyz">Website</a> ·
+  <a href="https://floefinance.com">Website</a> ·
   <a href="https://dev-dashboard.floelabs.xyz">Dashboard</a> ·
   <a href="https://floe-labs.gitbook.io/docs">Docs</a> ·
   <a href="https://floe-labs.gitbook.io/docs/quickstart">Quickstart</a>

@@ -46,7 +46,7 @@ about building agents on Floe.
 - [ ] Example runs end-to-end with the documented keys.
 - [ ] Root README table updated with your example's card.
 
-Open PRs against `main`. Questions: [hello@floelabs.xyz](mailto:hello@floelabs.xyz)
+Open PRs against `main`. Questions: [hello@floefinance.com](mailto:hello@floefinance.com)
 or [@FloeLabs](https://x.com/FloeLabs).
 
 ---
