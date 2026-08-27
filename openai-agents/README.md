@@ -47,7 +47,7 @@ Your OpenAI agent now has access to Floe's MCP tools — wallet, secured working
 capital, x402 preflight, and credit thresholds.
 
 A runnable script will land here once the native adapter is published. To get
-notified, email [hello@floelabs.xyz](mailto:hello@floelabs.xyz) or follow
+notified, email [hello@floefinance.com](mailto:hello@floefinance.com) or follow
 [@FloeLabs](https://x.com/FloeLabs).
 
 ## Learn more
