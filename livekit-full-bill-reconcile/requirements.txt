@@ -4,12 +4,14 @@ livekit-plugins-deepgram>=1.0
 livekit-plugins-elevenlabs>=1.0
 livekit-plugins-silero>=1.0
 python-dotenv>=1.0
-# floe-guard: one local budget + the LiveKit adapter. The adapter's record_tool()
-# — which lands avatar and paid-tool legs on the same budget — ships in 0.22.0.
+# floe-guard: one local budget + the LiveKit adapter. record_tool() lands the
+# avatar and paid-tool legs on the same budget. The avatar leg additionally needs
+# the `avatar` leg mode (so its rate resolves from the bundled map instead of a
+# hand-typed number) and record_tool(kind="avatar") — both ship in 0.25.0.
 # The [livekit] extra pulls the tested livekit-agents floor the adapter needs.
 #
-# PREVIEW: 0.22.0 is not on PyPI yet, so this installs floe-guard from source,
-# pinned to the release commit (immutable — survives the branch being deleted).
-# Once 0.22.0 is published, replace the line below with:
-#     floe-guard[livekit]>=0.22.0
-floe-guard[livekit] @ git+https://github.com/Floe-Labs/floe-guard.git@b7d33b72ed9dbefc43674b5c5f977143cd5feec0
+# PREVIEW: 0.25.0 is not on PyPI yet, so this installs floe-guard from source,
+# pinned to the MERGE commit (immutable — survives the branch being deleted).
+# Once 0.25.0 is published, replace the line below with:
+#     floe-guard[livekit]>=0.25.0
+floe-guard[livekit] @ git+https://github.com/Floe-Labs/floe-guard.git@574aba6f03190b3469c2f9b008ecbd2030cbd5f0
