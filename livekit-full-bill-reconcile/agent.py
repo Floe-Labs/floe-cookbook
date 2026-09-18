@@ -36,7 +36,7 @@ from livekit.plugins import deepgram, elevenlabs, openai, silero
 # floe-guard: ONE local BudgetGuard is the single budget every leg meters on.
 # The LiveKit adapter meters LLM/STT/TTS; record_tool lands the avatar and any
 # paid tool on the same budget. push_ledger reconciles the local legs to Floe.
-from floe_guard import BudgetGuard, LedgerSyncError, push_ledger
+from floe_guard import BudgetGuard, LedgerSyncError, price_voice_leg, push_ledger
 from floe_guard.integrations.livekit import LiveKitBudgetGuard
 
 load_dotenv()
@@ -73,8 +73,15 @@ FLOE_LLM_MODEL = os.environ.get("FLOE_LLM_MODEL", "openai/gpt-4o-mini")
 FLOE_LOCAL_BUDGET_USD = float(os.environ.get("FLOE_LOCAL_BUDGET_USD", "0.50"))
 # What one call of the demo paid tool costs you (what you pay the vendor).
 FLOE_TOOL_PRICE_USD = float(os.environ.get("FLOE_TOOL_PRICE_USD", "0.02"))
-# Your avatar vendor's per-minute rate (Tavus/HeyGen/Simli/Beyond Presence).
-# Unset (0) → no avatar leg is recorded.
+# Your avatar vendor, priced from floe-guard's bundled leg map — one of
+# "tavus-cvi-starter" / "tavus-cvi-growth" / "tavus-cvi-business" (each Tavus
+# plan is its own key, because which plan you are on is a fact about you).
+# Those are PUBLIC LIST rates, which is probably not what you actually pay.
+FLOE_AVATAR_MODEL = os.environ.get("FLOE_AVATAR_MODEL", "")
+# Your real per-minute rate. Wins over the map. Needed for vendors the map
+# cannot price at all — HeyGen sells credits, Simli and Beyond Presence publish
+# no per-minute figure — or set FLOE_RATE_CARD to a JSON file of your own rates.
+# Both unset → no avatar leg is recorded.
 FLOE_AVATAR_USD_PER_MINUTE = float(os.environ.get("FLOE_AVATAR_USD_PER_MINUTE", "0"))
 # Print the legs that WOULD reconcile instead of POSTing them (for a dry try).
 FLOE_RECONCILE_DRY_RUN = os.environ.get("FLOE_RECONCILE_DRY_RUN", "").lower() in ("1", "true", "yes")
@@ -84,14 +91,21 @@ def tool_legs_ndjson(guard: BudgetGuard) -> str:
     """The local legs to reconcile — everything recorded via record_tool.
 
     The LLM turns route through Floe's gateway (base_url) and are already on the
-    ledger, so pushing them again would double-count. Keep only the ``kind="tool"``
-    events (STT, TTS, avatar, paid tool), which is exactly the set of legs Floe
-    did not carry.
+    ledger, so pushing them again would double-count. Keep every NON-LLM event,
+    which is exactly the set of legs Floe did not carry.
+
+    Excluding ``kind == "llm"`` rather than keeping ``kind == "tool"``: since the
+    guard's kind vocabulary widened past ``llm | tool``, a leg recorded under its
+    own name (``avatar`` below, and ``sms`` / ``ocr`` / ``gpu`` elsewhere) is no
+    longer a "tool" event. A keep-list would have silently dropped those legs
+    from reconciliation — they would simply never appear on the bill, which is
+    the worst possible failure for a cost tool: a missing cost looks like a
+    cheaper call.
     """
     kept = []
     for line in guard.export_log().splitlines():
         try:
-            if json.loads(line).get("kind") == "tool":
+            if json.loads(line).get("kind") != "llm":
                 kept.append(line)
         except ValueError:
             continue
@@ -169,12 +183,25 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     started_at = time.monotonic()
 
     def on_close(_ev: object) -> None:
-        # Record the avatar leg from the call's duration × your vendor's rate
-        # (an avatar bills per minute of generated video, and LiveKit emits no
-        # metric for it), then reconcile every local leg onto Floe's ledger.
-        if FLOE_AVATAR_USD_PER_MINUTE > 0:
+        # Record the avatar leg from the call's duration (an avatar bills per
+        # minute of generated video, and LiveKit emits no metric for it), then
+        # reconcile every local leg onto Floe's ledger.
+        #
+        # The rate resolves through floe-guard: your override first, then the
+        # bundled list price for FLOE_AVATAR_MODEL. An unpriceable vendor raises
+        # rather than metering a silent $0 — we cannot cap what we cannot price.
+        if FLOE_AVATAR_MODEL or FLOE_AVATAR_USD_PER_MINUTE > 0:
             minutes = (time.monotonic() - started_at) / 60.0
-            budget.record_tool("livekit-avatar", minutes * FLOE_AVATAR_USD_PER_MINUTE)
+            cost = price_voice_leg(
+                "avatar",
+                minutes,
+                model=FLOE_AVATAR_MODEL or None,
+                override=FLOE_AVATAR_USD_PER_MINUTE or None,
+            )
+            if cost is not None:
+                # kind="avatar", not the old kind="tool": the leg travels under
+                # its own name, so the ledger says what the spend actually was.
+                budget.record_tool("livekit-avatar", cost, kind="avatar")
         reconcile(guard)
 
     session.on("close", on_close)

@@ -103,11 +103,17 @@ The stronger enforcement is always **on the gateway** — put as many legs on Fl
 as you can. This recipe reconciles the legs Floe doesn't carry so your ledger
 trues up to the whole call.
 
-> **Avatars:** avatar vendors (Tavus, HeyGen, Simli, Beyond Presence) bill per
-> minute of generated video and LiveKit emits no metric for them, so the leg is
-> recorded from call duration × your rate (`FLOE_AVATAR_USD_PER_MINUTE`). Wiring
-> a real avatar plugin into the room is orthogonal — its cost still lands via the
-> same one-line `record_tool`.
+> **Avatars:** avatar vendors bill per minute of generated video and LiveKit
+> emits no metric for them, so the leg is recorded from call duration × a rate
+> resolved by floe-guard. Set `FLOE_AVATAR_MODEL` to a bundled key
+> (`tavus-cvi-starter` / `-growth` / `-business`) to use Tavus's public list
+> price, or `FLOE_AVATAR_USD_PER_MINUTE` to the rate you actually pay — which
+> wins. HeyGen, Simli and Beyond Presence publish no per-minute figure, so they
+> need your own rate (or a `FLOE_RATE_CARD` entry) rather than shipping a guessed
+> one. A vendor that can be priced by neither raises rather than metering a
+> silent $0 — we can't cap what we can't price. The leg lands via the same
+> one-line `record_tool`, now under `kind="avatar"` so the ledger says what the
+> spend actually was; wiring a real avatar plugin into the room is orthogonal.
 
 ## Related recipes
 
