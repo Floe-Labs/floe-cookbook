@@ -24,6 +24,7 @@ Run:
   python agent.py dev     # LiveKit Agents dev mode
 """
 import json
+import math
 import os
 import sys
 import time
@@ -36,7 +37,13 @@ from livekit.plugins import deepgram, elevenlabs, openai, silero
 # floe-guard: ONE local BudgetGuard is the single budget every leg meters on.
 # The LiveKit adapter meters LLM/STT/TTS; record_tool lands the avatar and any
 # paid tool on the same budget. push_ledger reconciles the local legs to Floe.
-from floe_guard import BudgetGuard, LedgerSyncError, push_ledger
+from floe_guard import (
+    BudgetGuard,
+    LedgerSyncError,
+    price_voice_leg,
+    push_ledger,
+    resolve_voice_rate,
+)
 from floe_guard.integrations.livekit import LiveKitBudgetGuard
 
 load_dotenv()
@@ -61,6 +68,30 @@ def require_env() -> None:
         sys.exit(1)
 
 
+def _usd_env(name: str, default: str) -> float:
+    """Parse a USD env var, rejecting anything not finite and non-negative.
+
+    ``float()`` happily returns ``nan``, ``-inf`` or a negative, and every one of
+    those makes a later ``> 0`` test False — so a typo'd rate would silently skip
+    the leg instead of failing. A missing cost looks like a cheaper call, which is
+    the worst way for a cost tool to be wrong. Fail at startup instead. ``0`` is
+    the documented "disabled" sentinel and stays legal.
+    """
+    raw = os.environ.get(name, default)
+    try:
+        value = float(raw)
+    except ValueError:
+        print(f"{name}={raw!r} is not a number.", file=sys.stderr)
+        sys.exit(1)
+    if not math.isfinite(value) or value < 0:
+        print(
+            f"{name}={raw!r} must be a finite, non-negative number (0 disables it).",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    return value
+
+
 require_env()
 
 # LLM rides Floe's OpenAI-compatible gateway; the ledger-sync host is the same
@@ -73,25 +104,70 @@ FLOE_LLM_MODEL = os.environ.get("FLOE_LLM_MODEL", "openai/gpt-4o-mini")
 FLOE_LOCAL_BUDGET_USD = float(os.environ.get("FLOE_LOCAL_BUDGET_USD", "0.50"))
 # What one call of the demo paid tool costs you (what you pay the vendor).
 FLOE_TOOL_PRICE_USD = float(os.environ.get("FLOE_TOOL_PRICE_USD", "0.02"))
-# Your avatar vendor's per-minute rate (Tavus/HeyGen/Simli/Beyond Presence).
-# Unset (0) → no avatar leg is recorded.
-FLOE_AVATAR_USD_PER_MINUTE = float(os.environ.get("FLOE_AVATAR_USD_PER_MINUTE", "0"))
+# Your avatar vendor, priced from floe-guard's bundled leg map — one of
+# "tavus-cvi-starter" / "tavus-cvi-growth" / "tavus-cvi-business" (each Tavus
+# plan is its own key, because which plan you are on is a fact about you).
+# Those are PUBLIC LIST rates, which is probably not what you actually pay.
+FLOE_AVATAR_MODEL = os.environ.get("FLOE_AVATAR_MODEL", "")
+# Your real per-minute rate. Wins over the map. Needed for vendors the map
+# cannot price at all — HeyGen sells credits, Simli and Beyond Presence publish
+# no per-minute figure — or set FLOE_RATE_CARD to a JSON file of your own rates.
+# Both unset → no avatar leg is recorded.
+FLOE_AVATAR_USD_PER_MINUTE = _usd_env("FLOE_AVATAR_USD_PER_MINUTE", "0")
 # Print the legs that WOULD reconcile instead of POSTing them (for a dry try).
 FLOE_RECONCILE_DRY_RUN = os.environ.get("FLOE_RECONCILE_DRY_RUN", "").lower() in ("1", "true", "yes")
+
+
+def require_priceable_avatar() -> None:
+    """Prove the avatar leg is priceable BEFORE taking any calls.
+
+    ``on_close`` is the wrong place to discover a misconfigured avatar vendor: it
+    runs after the call, and anything raised there skips ``reconcile(guard)`` —
+    so one unpriceable avatar would take every OTHER local leg (STT, TTS, the
+    paid tool) off the ledger with it. Fail-closed on pricing must not turn into
+    fail-open on the whole bill. Resolving once here turns that into a startup
+    error, which is the only place a config mistake is cheap.
+    """
+    if not FLOE_AVATAR_MODEL and FLOE_AVATAR_USD_PER_MINUTE == 0:
+        return  # no avatar leg configured — the documented default
+    try:
+        resolve_voice_rate(
+            FLOE_AVATAR_MODEL or None,
+            "avatar",
+            FLOE_AVATAR_USD_PER_MINUTE or None,
+        )
+    except Exception as exc:  # noqa: BLE001 — any resolution failure is fatal here
+        print(
+            f"Avatar leg is configured but cannot be priced: {exc}\n"
+            "Set FLOE_AVATAR_USD_PER_MINUTE to the rate you pay, pick a bundled "
+            "FLOE_AVATAR_MODEL, or add the vendor to your FLOE_RATE_CARD.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
+require_priceable_avatar()
 
 
 def tool_legs_ndjson(guard: BudgetGuard) -> str:
     """The local legs to reconcile — everything recorded via record_tool.
 
     The LLM turns route through Floe's gateway (base_url) and are already on the
-    ledger, so pushing them again would double-count. Keep only the ``kind="tool"``
-    events (STT, TTS, avatar, paid tool), which is exactly the set of legs Floe
-    did not carry.
+    ledger, so pushing them again would double-count. Keep every NON-LLM event,
+    which is exactly the set of legs Floe did not carry.
+
+    Excluding ``kind == "llm"`` rather than keeping ``kind == "tool"``: since the
+    guard's kind vocabulary widened past ``llm | tool``, a leg recorded under its
+    own name (``avatar`` below, and ``sms`` / ``ocr`` / ``gpu`` elsewhere) is no
+    longer a "tool" event. A keep-list would have silently dropped those legs
+    from reconciliation — they would simply never appear on the bill, which is
+    the worst possible failure for a cost tool: a missing cost looks like a
+    cheaper call.
     """
     kept = []
     for line in guard.export_log().splitlines():
         try:
-            if json.loads(line).get("kind") == "tool":
+            if json.loads(line).get("kind") != "llm":
                 kept.append(line)
         except ValueError:
             continue
@@ -169,12 +245,33 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     started_at = time.monotonic()
 
     def on_close(_ev: object) -> None:
-        # Record the avatar leg from the call's duration × your vendor's rate
-        # (an avatar bills per minute of generated video, and LiveKit emits no
-        # metric for it), then reconcile every local leg onto Floe's ledger.
-        if FLOE_AVATAR_USD_PER_MINUTE > 0:
+        # Record the avatar leg from the call's duration (an avatar bills per
+        # minute of generated video, and LiveKit emits no metric for it), then
+        # reconcile every local leg onto Floe's ledger.
+        #
+        # The rate resolves through floe-guard: your override first, then the
+        # bundled list price for FLOE_AVATAR_MODEL. require_priceable_avatar()
+        # already proved this resolves at startup, so reaching the except below
+        # means something unforeseen.
+        if FLOE_AVATAR_MODEL or FLOE_AVATAR_USD_PER_MINUTE > 0:
             minutes = (time.monotonic() - started_at) / 60.0
-            budget.record_tool("livekit-avatar", minutes * FLOE_AVATAR_USD_PER_MINUTE)
+            try:
+                cost = price_voice_leg(
+                    "avatar",
+                    minutes,
+                    model=FLOE_AVATAR_MODEL or None,
+                    override=FLOE_AVATAR_USD_PER_MINUTE or None,
+                )
+                if cost is not None:
+                    # kind="avatar", not the old kind="tool": the leg travels
+                    # under its own name, so the ledger says what the spend was.
+                    budget.record_tool("livekit-avatar", cost, kind="avatar")
+            except Exception as exc:  # noqa: BLE001 — never lose the other legs
+                # on_close is the ONLY path that reconciles STT/TTS/tool. Letting
+                # an avatar failure propagate would drop all of them from the
+                # ledger to save one leg — loud about the leg we lost, but the
+                # rest of the bill still lands.
+                print(f"Avatar leg not recorded: {exc}", file=sys.stderr)
         reconcile(guard)
 
     session.on("close", on_close)

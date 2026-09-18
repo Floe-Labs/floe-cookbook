@@ -11,7 +11,7 @@ LiveKit room ⇄ agent.py         ── ONE floe-guard budget ──
    ├─ LLM     Floe keyless inference (base_url swap)   → carried on the gateway
    ├─ STT     Deepgram (BYO)        ┐
    ├─ TTS     ElevenLabs (BYO)      │  metered locally, reconciled to the
-   ├─ avatar  per-minute video (BYO)│  ledger at call end (kind="tool" legs)
+   ├─ avatar  per-minute video (BYO)│  ledger at call end (every non-LLM leg)
    └─ tool    a paid API call       ┘
 ```
 
@@ -25,8 +25,10 @@ LiveKit room ⇄ agent.py         ── ONE floe-guard budget ──
   turn *before* its LLM call once the call's spend would cross the cap.
 - **No double-billing, stated plainly.** The LLM routes through Floe's gateway
   and is already on the ledger, so only the local legs (everything recorded via
-  `record_tool` — `kind="tool"`) are pushed to Reconcile. See `tool_legs_ndjson`
-  in `agent.py`.
+  `record_tool`) are pushed to Reconcile. The filter excludes `kind == "llm"`
+  rather than keeping `kind == "tool"` — a leg recorded under its own name, like
+  the avatar below, is not a "tool" event, and a keep-list would silently drop it
+  from the bill. See `tool_legs_ndjson` in `agent.py`.
 
 ## Stack
 
@@ -52,7 +54,9 @@ cp .env.example .env      # Floe agent key, Deepgram, ElevenLabs, LiveKit creds
 python agent.py dev       # LiveKit Agents dev mode — connect from the LiveKit playground
 ```
 
-> **Preview dependency.** This recipe needs floe-guard's `record_tool()` (avatar + paid-tool metering), which ships in **0.22.0** — not on PyPI yet, so `requirements.txt` installs floe-guard from source at the release commit. Once 0.22.0 is published, swap that line for `floe-guard[livekit]>=0.22.0`.
+> **Preview dependency.** This recipe needs floe-guard's `record_tool()` (avatar + paid-tool metering) plus the `avatar` leg mode and `record_tool(kind=...)`, which land in **0.25.0** — not on PyPI yet, so `requirements.txt` installs floe-guard from source at a pinned commit. Once 0.25.0 is published, swap that line for `floe-guard[livekit]>=0.25.0`.
+>
+> Until then the avatar leg is the only part that needs it: leave `FLOE_AVATAR_MODEL` and `FLOE_AVATAR_USD_PER_MINUTE` unset and the rest of the recipe runs unchanged. With an avatar configured against an older floe-guard, the agent exits at startup with a clear message rather than failing after a call.
 
 Ask the agent about a company to trigger the paid `lookup_company` tool. At call
 end you'll see a `[reconcile] synced N leg(s)` line — the STT/TTS/avatar/tool
@@ -71,7 +75,13 @@ budget = LiveKitBudgetGuard(
     stt_model="deepgram-nova-3", tts_model="elevenlabs-flash-v2.5",
 )
 budget.record_tool("company-lookup", 0.02, label=domain)   # a paid tool leg
-budget.record_tool("livekit-avatar", minutes * rate)        # the avatar leg
+
+# The avatar leg. The rate resolves through floe-guard — your own rate first,
+# then the bundled list price for FLOE_AVATAR_MODEL — instead of being a number
+# you hand-multiply. kind="avatar" means the ledger says what the spend was.
+cost = price_voice_leg("avatar", minutes, model=FLOE_AVATAR_MODEL or None,
+                       override=FLOE_AVATAR_USD_PER_MINUTE or None)
+budget.record_tool("livekit-avatar", cost, kind="avatar")
 ```
 
 At call end, only the local legs are reconciled — the LLM is already on the
@@ -81,7 +91,12 @@ gateway ledger, so pushing it again would double-count:
 def tool_legs_ndjson(guard):
     return "".join(
         f"{line}\n" for line in guard.export_log().splitlines()
-        if json.loads(line).get("kind") == "tool"
+        # Exclude the LLM (already on the gateway ledger), keep everything else.
+        # NOT `== "tool"`: since floe-guard's kind vocabulary widened, a leg
+        # under its own name (avatar, sms, ocr, gpu) is not a "tool" event, and
+        # a keep-list would drop it from the bill — a missing cost looks like a
+        # cheaper call.
+        if json.loads(line).get("kind") != "llm"
     )
 
 push_ledger(tool_legs_ndjson(guard), FLOE_API_KEY, base_url=FLOE_LEDGER_BASE_URL)
@@ -103,11 +118,17 @@ The stronger enforcement is always **on the gateway** — put as many legs on Fl
 as you can. This recipe reconciles the legs Floe doesn't carry so your ledger
 trues up to the whole call.
 
-> **Avatars:** avatar vendors (Tavus, HeyGen, Simli, Beyond Presence) bill per
-> minute of generated video and LiveKit emits no metric for them, so the leg is
-> recorded from call duration × your rate (`FLOE_AVATAR_USD_PER_MINUTE`). Wiring
-> a real avatar plugin into the room is orthogonal — its cost still lands via the
-> same one-line `record_tool`.
+> **Avatars:** avatar vendors bill per minute of generated video and LiveKit
+> emits no metric for them, so the leg is recorded from call duration × a rate
+> resolved by floe-guard. Set `FLOE_AVATAR_MODEL` to a bundled key
+> (`tavus-cvi-starter` / `-growth` / `-business`) to use Tavus's public list
+> price, or `FLOE_AVATAR_USD_PER_MINUTE` to the rate you actually pay — which
+> wins. HeyGen, Simli and Beyond Presence publish no per-minute figure, so they
+> need your own rate (or a `FLOE_RATE_CARD` entry) rather than shipping a guessed
+> one. A vendor that can be priced by neither raises rather than metering a
+> silent $0 — we can't cap what we can't price. The leg lands via the same
+> one-line `record_tool`, now under `kind="avatar"` so the ledger says what the
+> spend actually was; wiring a real avatar plugin into the room is orthogonal.
 
 ## Related recipes
 
