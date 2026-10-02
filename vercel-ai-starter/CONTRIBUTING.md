@@ -1,4 +1,4 @@
-# Contributing to floe-vercel-ai-starter
+# Contributing to vercel-ai-starter
 
 This is a clonable starter that ships a Vercel AI SDK agent with
 [`floe-guard`](https://github.com/Floe-Labs/floe-guard) spend-governance wired in
@@ -11,8 +11,8 @@ Contributions are welcome.
 ## Development setup
 
 ```bash
-git clone https://github.com/Floe-Labs/floe-vercel-ai-starter.git
-cd floe-vercel-ai-starter
+git clone https://github.com/Floe-Labs/floe-cookbook.git
+cd floe-cookbook/vercel-ai-starter
 npm install
 cp .env.example .env.local    # add OPENAI_API_KEY for live chat (optional for the demo)
 ```

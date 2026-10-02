@@ -96,7 +96,7 @@ export default function Home() {
 
       <p className="links">
         Go live: add <code>OPENAI_API_KEY</code> and POST to <code>/api/chat</code>. See the{" "}
-        <a href="https://github.com/Floe-Labs/floe-vercel-ai-starter#readme">README</a> for
+        <a href="https://github.com/Floe-Labs/floe-cookbook/tree/main/vercel-ai-starter#readme">README</a> for
         the deploy button and the optional one-env-var hosted upgrade.
       </p>
     </main>

@@ -1,8 +1,8 @@
-# floe-vercel-ai-starter
+# vercel-ai-starter
 
 [![guarded by floe-guard](https://img.shields.io/badge/guarded%20by-floe--guard-5b8cff)](https://github.com/Floe-Labs/floe-guard)
-[![CI](https://github.com/Floe-Labs/floe-vercel-ai-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/Floe-Labs/floe-vercel-ai-starter/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![CI](https://github.com/Floe-Labs/floe-cookbook/actions/workflows/ci.yml/badge.svg)](https://github.com/Floe-Labs/floe-cookbook/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](../LICENSE)
 
 **Know what every call costs — then cap it.** A Vercel AI SDK chat agent that meters
 every call on one Floe ledger, so you see the real cost per session — with a
@@ -28,7 +28,7 @@ New accounts get a **$3 Welcome Credit (300 API credits)** — no card. [Set up 
 
 ## Deploy
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Floe-Labs/floe-vercel-ai-starter&env=OPENAI_API_KEY&envDescription=OpenAI%20API%20key%20for%20live%20chat%20%28the%20zero-key%20demo%20needs%20none%29&envLink=https://github.com/Floe-Labs/floe-vercel-ai-starter%23go-live)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Floe-Labs/floe-cookbook/tree/main/vercel-ai-starter&env=OPENAI_API_KEY&envDescription=OpenAI%20API%20key%20for%20live%20chat%20%28the%20zero-key%20demo%20needs%20none%29&envLink=https://github.com/Floe-Labs/floe-cookbook/tree/main/vercel-ai-starter%23go-live)
 
 The deploy button prompts for `OPENAI_API_KEY`. You can deploy without it — the
 zero-key demo still works; only live chat needs the key.
@@ -106,10 +106,10 @@ This starter ships the **local** floe-guard. Be clear about what that means:
 
 One of three clonable templates that ship Floe spend-governance by default:
 
-- [floe-vercel-ai-starter](https://github.com/Floe-Labs/floe-vercel-ai-starter) — Vercel AI SDK agent, deploy to Vercel (you are here)
-- [floe-crewai-starter](https://github.com/Floe-Labs/floe-crewai-starter) — CrewAI crew, run on Replit
-- [eve-floe](https://github.com/Floe-Labs/eve-floe) — Vercel Eve agent with per-subagent budgets
+- [vercel-ai-starter](../vercel-ai-starter) — Vercel AI SDK agent, deploy to Vercel (you are here)
+- [crewai-starter](../crewai-starter) — CrewAI crew, Replit-ready
+- [eve-floe](../eve-floe) — Vercel Eve agent with per-subagent budgets
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+MIT — see [LICENSE](../LICENSE).

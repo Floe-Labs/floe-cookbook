@@ -1,4 +1,4 @@
-# Contributing to floe-crewai-starter
+# Contributing to crewai-starter
 
 This is a clonable starter that ships a CrewAI crew with
 [`floe-guard`](https://github.com/Floe-Labs/floe-guard) spend-governance wired in
@@ -11,8 +11,8 @@ Contributions are welcome.
 ## Development setup
 
 ```bash
-git clone https://github.com/Floe-Labs/floe-crewai-starter.git
-cd floe-crewai-starter
+git clone https://github.com/Floe-Labs/floe-cookbook.git
+cd floe-cookbook/crewai-starter
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env          # add OPENAI_API_KEY to run the real crew (optional for the demo)

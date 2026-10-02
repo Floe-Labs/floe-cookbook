@@ -8,8 +8,8 @@ Contributions are welcome.
 ## Development setup
 
 ```bash
-git clone https://github.com/Floe-Labs/eve-floe.git
-cd eve-floe
+git clone https://github.com/Floe-Labs/floe-cookbook.git
+cd floe-cookbook/eve-floe
 npm install
 npm run typecheck
 ```

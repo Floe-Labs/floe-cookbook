@@ -1,7 +1,7 @@
 # eve-floe — what your Eve agent's API spend really costs
 
-[![CI](https://github.com/Floe-Labs/eve-floe/actions/workflows/ci.yml/badge.svg)](https://github.com/Floe-Labs/eve-floe/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![CI](https://github.com/Floe-Labs/floe-cookbook/actions/workflows/ci.yml/badge.svg)](https://github.com/Floe-Labs/floe-cookbook/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](../LICENSE)
 
 **Know what every API call your [Eve](https://eve.dev) agent makes actually costs.** Eve agents
 are autonomous, durable, and run unattended — Vercel's own launch cites a lead
@@ -55,8 +55,8 @@ agent/
 **Prereq:** Node.js **24+** (required by `eve`).
 
 ```bash
-git clone https://github.com/Floe-Labs/eve-floe.git
-cd eve-floe
+git clone https://github.com/Floe-Labs/floe-cookbook.git
+cd floe-cookbook/eve-floe
 npm install
 cp .env.example .env          # then fill in the two keys
 ```
@@ -98,10 +98,10 @@ complementary. We don't claim to cap model tokens.
 
 One of three clonable templates that ship Floe spend-governance by default:
 
-- [floe-vercel-ai-starter](https://github.com/Floe-Labs/floe-vercel-ai-starter) — Vercel AI SDK agent, deploy to Vercel
-- [floe-crewai-starter](https://github.com/Floe-Labs/floe-crewai-starter) — CrewAI crew, run on Replit
-- [eve-floe](https://github.com/Floe-Labs/eve-floe) — Vercel Eve agent with per-subagent budgets (you are here)
+- [vercel-ai-starter](../vercel-ai-starter) — Vercel AI SDK agent, deploy to Vercel
+- [crewai-starter](../crewai-starter) — CrewAI crew, Replit-ready
+- [eve-floe](../eve-floe) — Vercel Eve agent with per-subagent budgets (you are here)
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](../LICENSE).

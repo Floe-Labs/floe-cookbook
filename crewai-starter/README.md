@@ -1,8 +1,8 @@
-# floe-crewai-starter
+# crewai-starter
 
 [![guarded by floe-guard](https://img.shields.io/badge/guarded%20by-floe--guard-2f81f7.svg)](https://github.com/Floe-Labs/floe-guard)
-[![CI](https://github.com/Floe-Labs/floe-crewai-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/Floe-Labs/floe-crewai-starter/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![CI](https://github.com/Floe-Labs/floe-cookbook/actions/workflows/ci.yml/badge.svg)](https://github.com/Floe-Labs/floe-cookbook/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](../LICENSE)
 
 **Know what every run costs — then cap it.** A CrewAI crew that meters every LLM and
 tool call on one Floe ledger, so you see the real cost per run — with a
@@ -57,16 +57,20 @@ floe-guard's bundled cost map. No crewai, no litellm, no key needed.
 
 ## Run on Replit
 
-[![Run on Replit](https://replit.com/badge/github/Floe-Labs/floe-crewai-starter)](https://replit.com/new/github/Floe-Labs/floe-crewai-starter)
-
-The Run button executes `python demo.py` — the zero-key budget demo, no secrets
+Replit's GitHub import clones a whole repository, not a subfolder, so there is
+no one-click button from the cookbook. Copy this folder into a Repl (see
+[Use this template](#use-this-template)) and the bundled `.replit` takes over:
+the Run button executes `python demo.py` — the zero-key budget demo, no secrets
 needed. Add `OPENAI_API_KEY` in the Secrets tab to run the real crew.
 
 ## Use this template
 
-Click **"Use this template" → "Create a new repository"** at the top of the
-[GitHub repo](https://github.com/Floe-Labs/floe-crewai-starter) to get your own
-copy, then clone and run.
+Copy just this folder into a project of your own, then run it:
+
+```bash
+npx degit Floe-Labs/floe-cookbook/crewai-starter my-governed-crew
+cd my-governed-crew
+```
 
 ## Run the real governed crew
 
@@ -147,10 +151,10 @@ This starter ships the **local** floe-guard. Be clear about what that means:
 
 One of three clonable templates that ship Floe spend-governance by default:
 
-- [floe-vercel-ai-starter](https://github.com/Floe-Labs/floe-vercel-ai-starter) — Vercel AI SDK agent, deploy to Vercel
-- [floe-crewai-starter](https://github.com/Floe-Labs/floe-crewai-starter) — CrewAI crew, run on Replit (you are here)
-- [eve-floe](https://github.com/Floe-Labs/eve-floe) — Vercel Eve agent with per-subagent budgets
+- [vercel-ai-starter](../vercel-ai-starter) — Vercel AI SDK agent, deploy to Vercel
+- [crewai-starter](../crewai-starter) — CrewAI crew, Replit-ready (you are here)
+- [eve-floe](../eve-floe) — Vercel Eve agent with per-subagent budgets
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+MIT — see [LICENSE](../LICENSE).
