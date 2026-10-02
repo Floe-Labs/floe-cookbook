@@ -1,0 +1,16 @@
+# Replit run config. The Run button executes the zero-key budget demo — no
+# secrets needed. Add OPENAI_API_KEY in the Secrets tab, then run `python crew.py`
+# in the shell for the real governed crew.
+run = "python demo.py"
+entrypoint = "demo.py"
+modules = ["python-3.11"]
+
+[nix]
+channel = "stable-23_11"
+
+[deployment]
+run = ["python", "demo.py"]
+
+[[ports]]
+localPort = 8080
+externalPort = 80
