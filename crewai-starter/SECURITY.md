@@ -1,0 +1,27 @@
+# Security Policy
+
+## Supported versions
+
+Only the latest version of this template is supported. Please base new work on the
+latest `main` before reporting an issue.
+
+## Reporting a vulnerability
+
+**Do not open a public GitHub issue for security vulnerabilities.**
+
+Report them privately by email to **hello@floefinance.com**. If you do not get a
+response, use **hello@floefinance.com** as a fallback contact.
+
+Please include:
+
+- a description of the vulnerability and its impact,
+- steps to reproduce (a minimal proof of concept helps),
+- the affected version.
+
+## What to expect
+
+- We aim to acknowledge your report within **3 business days**.
+- We will keep you updated on our assessment and the fix.
+- Please give us a reasonable window to release a fix before any public disclosure.
+
+Thank you for helping keep this template and its users safe.
