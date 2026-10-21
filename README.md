@@ -62,6 +62,7 @@ agents: rail-agnostic, one key, one ledger, no per-vendor accounts, no crypto.
 - **Budget-enforce a self-hosted Pipecat / LiveKit agent** — self-report each call's cost so budgets true up between sessions — [`pipecat-livekit-reconcile`](./pipecat-livekit-reconcile)
 - **Reconcile a LiveKit agent's whole bill on one budget** — LLM on Floe's gateway, and STT/TTS/avatar/tool legs metered locally and pushed to the ledger at call end — [`livekit-full-bill-reconcile`](./livekit-full-bill-reconcile)
 - **Graduate a Vapi / Retell / Bland agent to 100% coverage** — move every leg (LLM, STT, TTS, telephony) off the orchestrator onto Floe rails so the whole call is gated pre-call, not reconciled after — [`migrate-to-full-coverage`](./migrate-to-full-coverage)
+- **Start from a governed-agent starter** — a zero-key demo that hard-stops a runaway loop with a local `floe-guard` budget, on the Vercel AI SDK ([`vercel-ai-starter`](./vercel-ai-starter)) or CrewAI ([`crewai-starter`](./crewai-starter)) — or a Vercel Eve agent with per-subagent caps enforced server-side — [`eve-floe`](./eve-floe)
 
 ## Examples
 
@@ -84,6 +85,9 @@ agents: rail-agnostic, one key, one ledger, no per-vendor accounts, no crypto.
 | **livekit-full-bill-reconcile** | Python | LiveKit Agents · Deepgram · ElevenLabs · floe-guard | Intermediate | The whole call bill on one budget: LLM carried on Floe's gateway, and the STT/TTS/avatar/tool legs Floe doesn't carry metered locally via `record_tool` and reconciled onto the same ledger at call end — no leg billed twice. | [→](./livekit-full-bill-reconcile) |
 | **migrate-to-full-coverage** | Guide | Pipecat / LiveKit on Floe | Intermediate | The "graduate to 100% coverage" path: move each leg (LLM, STT, TTS, telephony) off Vapi/Retell/Bland onto Floe rails, flipping every reconciled leg to pre-call enforcement. Stitches the full-stack recipes with a cost/coverage calculator. | [→](./migrate-to-full-coverage) |
 | **floe-phone-sales-agent** | TypeScript | Floe Phone · keyless LLM · Exa · Calendly | Advanced | The full-dogfood outbound sales agent on **Floe Phone** (webhook mode): telephony, STT, TTS, LLM turns, and paid research all meter on **one key**, with enforced per-call budgets plus a campaign cap — and bookings confirmed by Calendly webhook, never on the agent's say-so. | [→](./floe-phone-sales-agent) |
+| **vercel-ai-starter** | TypeScript | Vercel AI SDK · Next.js · `floe-guard` | Intermediate | A deployable Next.js chat agent whose model calls are priced offline and hard-capped in-process by `floe-guard` — the homepage runs a zero-key runaway-loop demo that stops at a $0.10 ceiling. | [→](./vercel-ai-starter) |
+| **crewai-starter** | Python | CrewAI · `floe-guard` | Beginner | A two-agent crew sharing one local `floe-guard` budget, plus a zero-key `demo.py` that hard-stops a runaway loop at $1 — the in-process counterpart to the server-side cap in `crewai-demo`. | [→](./crewai-starter) |
+| **eve-floe** | TypeScript | Vercel Eve · Floe MCP (x402) | Intermediate | An Eve research agent whose `fetcher` subagent pays x402 APIs on its own capped Floe key — over-budget payments are refused server-side, and the agent tapers as it nears the cap. | [→](./eve-floe) |
 
 > **Difficulty** is a rough guide: _Beginner_ = a key and a few minutes;
 > _Intermediate_ = a webhook, a framework, or a running server;
