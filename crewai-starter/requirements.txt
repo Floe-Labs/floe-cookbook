@@ -1,0 +1,13 @@
+# floe-guard with the CrewAI extra (pulls in litellm). The budget guardrail that
+# checks the shared budget before each guarded LLM call.
+floe-guard[crewai]>=0.23.6
+
+# CrewAI itself. Capped below the next major — CrewAI moves fast and majors can
+# break the Agent/Crew/Task API this starter uses.
+crewai>=1.0,<2.0
+
+# Loads OPENAI_API_KEY / FLOE_* from a local .env file.
+python-dotenv>=1.2.3,<2.0
+
+# Used for the optional one-call hosted-budget read in crew.py.
+requests>=2.31,<3.0

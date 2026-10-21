@@ -1,0 +1,16 @@
+# env files — never commit real keys
+.env
+.env.*
+!.env.example
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# misc
+.DS_Store
