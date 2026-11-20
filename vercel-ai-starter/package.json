@@ -11,13 +11,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^1.3.0",
-    "ai": "^4.3.0",
-    "floe-guard": "^0.1.0",
+    "@ai-sdk/openai": "^4.0.106",
+    "ai": "^7.0.159",
+    "floe-guard": "^0.18.1",
     "next": "^15.5.26",
     "react": "^19.0.0",
     "react-dom": "^19.2.8",
-    "zod": "^3.23.8"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
